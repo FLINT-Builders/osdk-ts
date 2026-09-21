@@ -54,16 +54,14 @@ export class ObjectSetQuery extends BaseListQuery<
   ObjectSetPayload,
   ObjectSetQueryOptions
 > {
-  #baseObjectSetWire: string;
   #operations: Canonical<ObjectSetOperations>;
   #composedObjectSet: ObjectSet<any, any>;
-  #objectTypes: Set<string>;
+  #objectTypes: ReadonlySet<string>;
+  #resolvedObjectTypes:
+    | ReturnType<typeof getObjectTypesThatInvalidate>
+    | undefined;
   #requiresServerEvaluation: boolean;
   #resultTypeApiName: string;
-
-  // Object types this query's RDPs traverse; an edit to any of these triggers
-  // revalidation. Lazily populated on first fetch when `withProperties` is set.
-  #rdpInvalidationSet: ReadonlySet<string> | undefined;
 
   constructor(
     store: Store,
@@ -90,22 +88,25 @@ export class ObjectSetQuery extends BaseListQuery<
         : undefined,
     );
 
-    this.#baseObjectSetWire = baseObjectSetWire;
     this.#operations = operations;
     this.#composedObjectSet = this.#composeObjectSet(opts);
 
     const baseWire: WireObjectSet = JSON.parse(baseObjectSetWire);
-    this.#objectTypes = this.#extractObjectTypes(baseWire, opts);
-
-    this.#requiresServerEvaluation = !!(
-      operations.pivotTo ||
-      (operations.union && operations.union.length > 0) ||
-      (operations.intersect && operations.intersect.length > 0) ||
-      (operations.subtract && operations.subtract.length > 0)
+    this.#resultTypeApiName =
+      baseWire.type === "base" ? baseWire.objectType : "";
+    this.#objectTypes = new Set(
+      this.#resultTypeApiName ? [this.#resultTypeApiName] : [],
     );
 
-    this.#resultTypeApiName =
-      ObjectSetQuery.#extractTypeFromWireObjectSet(baseWire) ?? "";
+    this.#requiresServerEvaluation =
+      baseWire.type !== "base" ||
+      !!(
+        operations.withProperties ||
+        operations.pivotTo ||
+        (operations.union && operations.union.length > 0) ||
+        (operations.intersect && operations.intersect.length > 0) ||
+        (operations.subtract && operations.subtract.length > 0)
+      );
 
     if (opts.autoFetchMore === true) {
       this.minResultsToLoad = Number.MAX_SAFE_INTEGER;
@@ -157,48 +158,23 @@ export class ObjectSetQuery extends BaseListQuery<
     return result;
   }
 
-  #extractObjectTypes(
-    baseWire: WireObjectSet,
-    opts: ObjectSetQueryOptions,
-  ): Set<string> {
-    const types = new Set<string>();
-    const baseTypeName = ObjectSetQuery.#extractTypeFromWireObjectSet(baseWire);
-    if (baseTypeName) {
-      types.add(baseTypeName);
-    }
-    ObjectSetQuery.#addTypesFromObjectSets(opts.union, types);
-    ObjectSetQuery.#addTypesFromObjectSets(opts.intersect, types);
-    ObjectSetQuery.#addTypesFromObjectSets(opts.subtract, types);
-    return types;
-  }
-
-  static #addTypesFromObjectSets(
-    sets: ReadonlyArray<ObjectSet<any, any>> | undefined,
-    types: Set<string>,
-  ): void {
-    if (!sets) {
-      return;
-    }
-    for (const os of sets) {
-      const typeName = ObjectSetQuery.#extractTypeFromWireObjectSet(
-        getWireObjectSet(os),
-      );
-      if (typeName) {
-        types.add(typeName);
-      }
-    }
-  }
-
-  static #extractTypeFromWireObjectSet(
-    wire: WireObjectSet,
-  ): string | undefined {
-    if (wire.type === "base") {
-      return wire.objectType;
-    }
-    if (wire.type === "interfaceBase") {
-      return wire.interfaceType;
-    }
-    return undefined;
+  #resolveObjectTypes(): ReturnType<typeof getObjectTypesThatInvalidate> {
+    return (this.#resolvedObjectTypes ??= getObjectTypesThatInvalidate(
+      this.store.client[additionalContext],
+      getWireObjectSet(this.#composedObjectSet),
+    )
+      .then((result) => {
+        this.#resultTypeApiName = result.resultType.apiName;
+        this.#objectTypes = new Set([
+          result.resultType.apiName,
+          ...result.invalidationSet,
+        ]);
+        return result;
+      })
+      .catch((error: unknown) => {
+        this.#resolvedObjectTypes = undefined;
+        throw error;
+      }));
   }
 
   /**
@@ -215,17 +191,14 @@ export class ObjectSetQuery extends BaseListQuery<
   protected async fetchPageData(
     signal: AbortSignal | undefined,
   ): Promise<PageResult<Osdk.Instance<any>>> {
+    const { resultType } = await this.#resolveObjectTypes();
+
     if (
       this.#operations.orderBy &&
       Object.keys(this.#operations.orderBy).length > 0 &&
       !(this.sortingStrategy instanceof OrderBySortingStrategy)
     ) {
       const wireObjectSet = getWireObjectSet(this.#composedObjectSet);
-      const { resultType, invalidationSet } =
-        await getObjectTypesThatInvalidate(
-          this.store.client[additionalContext],
-          wireObjectSet,
-        );
       this.sortingStrategy = new OrderBySortingStrategy(
         resultType.apiName,
         this.#operations.orderBy,
@@ -234,16 +207,6 @@ export class ObjectSetQuery extends BaseListQuery<
           wireObjectSet,
         ),
       );
-      this.#rdpInvalidationSet = invalidationSet;
-    }
-
-    if (
-      this.#rdpInvalidationSet == null &&
-      this.#operations.withProperties != null
-    ) {
-      const wireObjectSet = getWireObjectSet(this.#composedObjectSet);
-      this.#rdpInvalidationSet =
-        await this.#computeInvalidationTypes(wireObjectSet);
     }
 
     // Fetch the data with pagination
@@ -317,6 +280,10 @@ export class ObjectSetQuery extends BaseListQuery<
 
     try {
       if (this.#requiresServerEvaluation) {
+        if (optimisticId) {
+          this.#removeOptimisticallyDeletedObjects(changes, optimisticId);
+          return;
+        }
         return this.#handleServerRevalidation(changes);
       }
       return this.#handleLocalUpdate(changes, optimisticId);
@@ -328,6 +295,34 @@ export class ObjectSetQuery extends BaseListQuery<
       }
     }
   };
+
+  #removeOptimisticallyDeletedObjects(
+    changes: Changes,
+    optimisticId: OptimisticId,
+  ): void {
+    if (changes.deleted.size === 0) {
+      return;
+    }
+    this.store.batch({ optimisticId, changes }, (batch) => {
+      const existing = batch.read(this.cacheKey)?.value;
+      if (!existing) {
+        return;
+      }
+      const remaining = existing.data.filter(
+        (key) => !changes.deleted.has(key),
+      );
+      if (remaining.length === existing.data.length) {
+        return;
+      }
+      this._updateList(
+        remaining,
+        "loading",
+        batch,
+        { type: "clientOrdered" },
+        existing.totalCount,
+      );
+    });
+  }
 
   #handleServerRevalidation(changes: Changes): Promise<void> | undefined {
     for (const objectType of this.#objectTypes) {
@@ -465,24 +460,6 @@ export class ObjectSetQuery extends BaseListQuery<
     return { definite, uncertain };
   }
 
-  async #computeInvalidationTypes(
-    wireObjectSet: WireObjectSet,
-  ): Promise<Set<string>> {
-    try {
-      const { invalidationSet } = await getObjectTypesThatInvalidate(
-        this.store.client[additionalContext],
-        wireObjectSet,
-      );
-      return invalidationSet;
-    } catch (error) {
-      this.store.logger?.error(
-        "Failed to compute invalidation types for object set query, falling back to empty set",
-        error,
-      );
-      return new Set();
-    }
-  }
-
   #getObjectCacheKey(obj: {
     $objectType: string;
     $primaryKey: string | number;
@@ -496,16 +473,12 @@ export class ObjectSetQuery extends BaseListQuery<
     );
   }
 
-  // TODO(oxc type-aware): the type-aware typescript/require-await rule does not flag this (it returns a Promise); remove this disable once type-aware linting is enabled.
-  // oxlint-disable-next-line require-await -- intentionally async: returns a Promise to satisfy its declared/contract type; no await needed
   invalidateObjectType = async (
     objectType: string,
     changes: Changes | undefined,
   ): Promise<void> => {
-    if (
-      this.#objectTypes.has(objectType) ||
-      (this.#rdpInvalidationSet?.has(objectType) ?? false)
-    ) {
+    await this.#resolveObjectTypes();
+    if (this.#objectTypes.has(objectType)) {
       changes?.modified.add(this.cacheKey);
       return this.revalidate(true);
     }

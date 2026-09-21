@@ -238,6 +238,30 @@ describe(getObjectTypesThatInvalidate, () => {
     expect(Object.keys(counts).length).toBeGreaterThan(0);
   });
 
+  it("preserves pivot dependencies when narrowing to an object type", async () => {
+    const objectSet = client(Employee)
+      .pivotTo("officeLink")
+      .pivotTo("occupants")
+      .narrowToType(FooInterface)
+      .narrowToType(Employee);
+
+    const { resultType, invalidationSet } = await helper(objectSet);
+    expect(resultType).toEqual("Employee");
+    expect([...invalidationSet].sort()).toEqual([
+      "Employee",
+      "Office",
+      "Person",
+    ]);
+  });
+
+  it("tracks implementing types when narrowing to an interface", async () => {
+    const objectSet = client(Employee).narrowToType(FooInterface);
+
+    const { resultType, invalidationSet } = await helper(objectSet);
+    expect(resultType).toEqual("FooInterface");
+    expect([...invalidationSet].sort()).toEqual(["Employee", "Person"]);
+  });
+
   it.skip("supports interface link search around", async () => {
     // FIXME, we don't have a good interface link example right now
     // Assuming FooInterface has links - skip if not available
