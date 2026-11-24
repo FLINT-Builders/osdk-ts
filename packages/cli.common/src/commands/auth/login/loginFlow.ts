@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-import { getRandomValues, subtle } from "node:crypto";
+import { getRandomValues, subtle, timingSafeEqual } from "node:crypto";
+import type { IncomingMessage, Server, ServerResponse } from "node:http";
 import { createServer } from "node:http";
 import { exit } from "node:process";
-import { parse } from "node:url";
 
 import consola from "consola";
 import open from "open";
@@ -28,40 +28,98 @@ import type { TokenResponse, TokenSuccessResponse } from "./token.js";
 import { isTokenErrorResponse } from "./token.js";
 
 const BROWSER_PROMPT_TIME_MS = 60 * 1000;
+// The redirect URL uses "localhost", which browsers may resolve to either
+// loopback address; listening on both keeps another process from taking the
+// other one and receiving the callback.
+const LOOPBACK_HOSTS = ["127.0.0.1", "::1"] as const;
 
 export async function invokeLoginFlow(
   args: LoginArgs,
 ): Promise<TokenSuccessResponse> {
   consola.start(`Authenticating using application id: ${args.clientId}`);
   const redirectUrl = "http://localhost:8080/auth/callback";
-  const port = parse(redirectUrl).port;
+  const { port: redirectPort, pathname: callbackPath } = new URL(redirectUrl);
+  const port = Number(redirectPort);
   const foundryUrl = ensureTrailingSlash(args.foundryUrl);
-  let resolve: (value: string) => void;
-  const authCode: Promise<string> = new Promise((_res) => {
-    resolve = _res;
-  });
-
-  const server = createServer((req, res) => {
-    const query = parse(req.url!, true).query;
-    res.end("Authenticated");
-    resolve(query.code as string);
-  });
-
-  server.on("error", (e) => {
-    if ((e as any).code === "EADDRINUSE") {
-      consola.error(
-        `Port ${port} is already in use, unable to perform authentication flow.`,
-      );
-      server.close();
-      exit(1);
-    }
-  });
-
-  server.listen(port);
   const clientId = args.clientId;
   const state = generateRandomString();
   const codeVerifier = generateRandomString();
   const codeChallenge = await generateCodeChallenge(codeVerifier);
+
+  let callbackHandled = false;
+  let resolveAuthCode: (value: string) => void;
+  let rejectAuthCode: (reason: Error) => void;
+  const authCode: Promise<string> = new Promise((_res, _rej) => {
+    resolveAuthCode = _res;
+    rejectAuthCode = _rej;
+  });
+
+  const handleCallback = (req: IncomingMessage, res: ServerResponse) => {
+    const url = new URL(req.url ?? "/", redirectUrl);
+    if (req.method !== "GET" || url.pathname !== callbackPath) {
+      res.statusCode = 404;
+      res.end("Not found");
+      return;
+    }
+    if (
+      callbackHandled ||
+      !isExpectedState(url.searchParams.get("state"), state)
+    ) {
+      res.statusCode = 400;
+      res.end("Invalid authentication request");
+      return;
+    }
+    callbackHandled = true;
+    const code = url.searchParams.get("code");
+    if (code == null || code === "") {
+      res.statusCode = 400;
+      res.end("Authentication failed");
+      rejectAuthCode(
+        new Error(
+          [
+            url.searchParams.get("error") ?? "missing authorization code",
+            url.searchParams.get("error_description"),
+          ]
+            .filter((part) => part != null)
+            .join(": "),
+        ),
+      );
+      return;
+    }
+    res.end("Authenticated");
+    resolveAuthCode(code);
+  };
+
+  const servers: Server[] = [];
+  const closeServers = () => {
+    for (const server of servers) {
+      server.close();
+    }
+  };
+
+  for (const host of LOOPBACK_HOSTS) {
+    const server = createServer(handleCallback);
+    try {
+      await listen(server, port, host);
+    } catch (e) {
+      const errorCode = (e as NodeJS.ErrnoException).code;
+      if (
+        host === "::1" &&
+        (errorCode === "EADDRNOTAVAIL" || errorCode === "EAFNOSUPPORT")
+      ) {
+        continue;
+      }
+      closeServers();
+      if (errorCode === "EADDRINUSE") {
+        consola.error(
+          `Port ${port} is already in use, unable to perform authentication flow.`,
+        );
+        exit(1);
+      }
+      throw e;
+    }
+    servers.push(server);
+  }
 
   const authorizeUrl = generateAuthorizeUrl(
     foundryUrl,
@@ -86,8 +144,16 @@ export async function invokeLoginFlow(
     );
   }, BROWSER_PROMPT_TIME_MS);
 
-  const code = await authCode;
-  server.close();
+  let code: string;
+  try {
+    code = await authCode;
+  } catch (e) {
+    closeServers();
+    clearTimeout(browserPrompt);
+    consola.error("Unable to authenticate", (e as Error).message);
+    exit(1);
+  }
+  closeServers();
 
   clearTimeout(browserPrompt);
 
@@ -110,6 +176,34 @@ export async function invokeLoginFlow(
 
   consola.success(`Successfully authenticated!`);
   return token;
+}
+
+function listen(server: Server, port: number, host: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const onError = (e: Error) => {
+      server.off("listening", onListening);
+      reject(e);
+    };
+    const onListening = () => {
+      server.off("error", onError);
+      resolve();
+    };
+    server.once("error", onError);
+    server.once("listening", onListening);
+    server.listen(port, host);
+  });
+}
+
+function isExpectedState(received: string | null, expected: string) {
+  if (received == null) {
+    return false;
+  }
+  const receivedBytes = Buffer.from(received);
+  const expectedBytes = Buffer.from(expected);
+  return (
+    receivedBytes.length === expectedBytes.length &&
+    timingSafeEqual(receivedBytes, expectedBytes)
+  );
 }
 
 function generateRandomString(length = 128) {
