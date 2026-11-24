@@ -15,10 +15,10 @@
  */
 
 import { cleanup, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { BaseSpreadsheetViewer } from "../BaseSpreadsheetViewer.js";
-import type { ParsedSpreadsheet } from "../SpreadsheetViewerApi.js";
+import type { ParsedSpreadsheet, SheetData } from "../SpreadsheetViewerApi.js";
 
 afterEach(() => {
   cleanup();
@@ -78,5 +78,54 @@ describe("BaseSpreadsheetViewer", () => {
   it("should render the empty state when neither prop is set", () => {
     render(<BaseSpreadsheetViewer />);
     expect(screen.getByText("No sheets")).toBeTruthy();
+  });
+
+  it("should not render a DOM cell for every position in a large sheet", () => {
+    // Give a virtualizer a viewport. The unfixed table does not consult it;
+    // it still emits one row element per data row and one cell per column.
+    const rect = vi
+      .spyOn(HTMLElement.prototype, "getBoundingClientRect")
+      .mockImplementation(
+        () =>
+          ({
+            x: 0,
+            y: 0,
+            top: 0,
+            left: 0,
+            bottom: 400,
+            right: 800,
+            width: 800,
+            height: 400,
+            toJSON() {
+              return {};
+            },
+          }) as DOMRect,
+      );
+
+    try {
+      const columnCount = 200;
+      const rowCount = 80;
+      const rows: string[][] = Array.from(
+        { length: rowCount },
+        (_unusedRow, rowIndex) =>
+          Array.from(
+            { length: columnCount },
+            (_unusedColumn, columnIndex) => `r${rowIndex}c${columnIndex}`,
+          ),
+      );
+      const sheet: SheetData = { name: "Large", rows };
+
+      render(<BaseSpreadsheetViewer content={{ sheets: [sheet] }} />);
+
+      const bodyRows = document.querySelectorAll("tbody tr");
+      const bodyCells = document.querySelectorAll("tbody td");
+      expect(bodyRows.length).toBeGreaterThan(0);
+      expect(bodyRows.length).toBeLessThan(rowCount);
+      // Far below one cell per column of every row (80 * 201 today).
+      expect(bodyCells.length).toBeLessThanOrEqual(1_500);
+      expect(screen.getByText("r0c0")).toBeTruthy();
+    } finally {
+      rect.mockRestore();
+    }
   });
 });

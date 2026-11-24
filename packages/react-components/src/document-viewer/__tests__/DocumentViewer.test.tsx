@@ -14,11 +14,14 @@
  * limitations under the License.
  */
 
+/* cspell:words openxmlformats officedocument spreadsheetml */
+
 import type { Media } from "@osdk/api";
-import { cleanup, render } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { TiffViewer } from "../../images/tiff-viewer/TiffViewer.js";
+import { declaredRangeAttackWorkbook } from "../../spreadsheet-viewer/__tests__/declaredRangeWorkbook.js";
 import { DocumentViewer } from "../DocumentViewer.js";
 import { TiffDocumentViewer } from "../TiffDocumentViewer.js";
 
@@ -89,5 +92,54 @@ describe("DocumentViewer deprecated viewer props", () => {
     expect(mockedTiffDocumentViewer.mock.calls[0]?.[0]).toMatchObject({
       tiffViewerProps: { onError },
     });
+  });
+});
+
+const SPREADSHEET_MIME =
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+
+function spreadsheetMedia(bytes: Uint8Array): Media {
+  return {
+    getMediaReference: () => ({
+      mimeType: SPREADSHEET_MIME,
+      reference: {
+        type: "mediaSetViewItem",
+        mediaSetViewItem: {
+          mediaItemRid: "ri.mio.main.media-item.attack",
+          mediaSetRid: "ri.mio.main.media-set.attack",
+          mediaSetViewRid: "ri.mio.main.view.attack",
+        },
+      },
+    }),
+    fetchContents: () => Promise.resolve(new Response(bytes)),
+    fetchMetadata: () =>
+      Promise.resolve({
+        sizeBytes: bytes.byteLength,
+        mediaType: SPREADSHEET_MIME,
+      }),
+  } as unknown as Media;
+}
+
+describe("DocumentViewer spreadsheet media", () => {
+  it("should render stored cells without the worksheet's declared range", async () => {
+    const bytes = declaredRangeAttackWorkbook();
+
+    render(<DocumentViewer media={spreadsheetMedia(bytes)} />);
+
+    expect(await screen.findByText("wide-cell")).toBeTruthy();
+    expect(screen.getByText("wide-also")).toBeTruthy();
+
+    const bodyRows = document.querySelectorAll("tbody tr");
+    const bodyCells = document.querySelectorAll("tbody td");
+    // The wide sheet stores two cells inside A1:C3. The declared range is
+    // A1:XFD3 (three rows by 16,384 columns).
+    expect(bodyRows.length).toBeLessThanOrEqual(3);
+    expect(bodyCells.length).toBeLessThanOrEqual(12);
+    expect(screen.queryByText("XFD")).toBeNull();
+
+    screen.getByRole("button", { name: "Tall" }).click();
+
+    expect(await screen.findByText("tall-cell")).toBeTruthy();
+    expect(document.querySelectorAll("tbody tr").length).toBeLessThanOrEqual(1);
   });
 });
