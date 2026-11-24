@@ -14,18 +14,20 @@
  * limitations under the License.
  */
 
+import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import color from "picocolors";
 import sirv from "sirv";
-import type { Plugin, ViteDevServer } from "vite";
+import type { HtmlTagDescriptor, Plugin, ViteDevServer } from "vite";
 
 import {
   CONFIG_FILE_SUFFIX,
   DEV_PLUGIN_ID,
   ENTRYPOINTS_PATH,
   FINISH_PATH,
+  FINISH_SECRET_META_NAME,
   MODULE_EVALUATION_MODE,
   SETUP_PATH,
   VITE_INJECTIONS_PATH,
@@ -35,6 +37,13 @@ import { standardizePathAndFileExtension } from "../common/standardizePathAndFil
 import { buildDevModeManifest } from "./buildDevModeManifest.js";
 import { isCodeWorkspacesMode } from "./codeWorkspacesMode.js";
 import { extractInjectedScripts } from "./extractInjectedScripts.js";
+import {
+  generateFinishSecret,
+  getFinishRequestRejection,
+  injectFinishSecretMeta,
+  isTrustedHost,
+  preventCorsHeaders,
+} from "./finishAuth.js";
 import { getBaseHref } from "./getBaseHref.js";
 import { getFoundryToken } from "./getFoundryToken.js";
 import { publishDevModeSettings } from "./publishDevModeSettings.js";
@@ -57,6 +66,9 @@ export function FoundryWidgetDevPlugin(
   const codeEntrypoints: Record<string, string> = {};
   // Store the map of fully resolved config file paths to entrypoint file paths
   const configFileToEntrypoint: Record<string, string> = {};
+  // Generated when the dev server starts and embedded in the setup page, which must present it
+  // to the finish endpoint before dev mode settings are published with the developer's token
+  let finishSecret: string | undefined;
 
   return {
     name: DEV_PLUGIN_ID,
@@ -93,6 +105,9 @@ export function FoundryWidgetDevPlugin(
      * endpoint will set the widget overrides in Foundry and enable dev mode.
      */
     configureServer(server) {
+      const secret = generateFinishSecret();
+      finishSecret = secret;
+
       // Override the printUrls function to print the setup page URL
       server.printUrls = () => printSetupPageUrl(server);
 
@@ -111,6 +126,34 @@ export function FoundryWidgetDevPlugin(
           } else {
             next();
           }
+        },
+      );
+
+      /**
+       * Serve the setup page document with the finish secret embedded. Other origins must not be
+       * able to read it, so CORS headers are stripped from everything under the setup path.
+       */
+      server.middlewares.use(
+        serverPath(server, SETUP_PATH),
+        (req, res, next) => {
+          preventCorsHeaders(res);
+          if (!isTrustedHost(server, req.headers.host)) {
+            res.statusCode = 403;
+            res.end("Blocked request. This host is not allowed.");
+            return;
+          }
+          if (!isSetupDocumentRequest(req.method, req.url)) {
+            next();
+            return;
+          }
+          const setupHtml = readSetupIndexHtml();
+          if (setupHtml == null) {
+            next();
+            return;
+          }
+          res.setHeader("Content-Type", "text/html; charset=utf-8");
+          res.setHeader("Cache-Control", "no-store");
+          res.end(injectFinishSecretMeta(setupHtml, secret));
         },
       );
 
@@ -145,6 +188,18 @@ export function FoundryWidgetDevPlugin(
       server.middlewares.use(
         serverPath(server, FINISH_PATH),
         async (req, res) => {
+          const rejection = getFinishRequestRejection(server, req, secret);
+          if (rejection != null) {
+            server.config.logger.warn(
+              `Rejected request to ${FINISH_PATH}: ${rejection}`,
+            );
+            res.setHeader("Content-Type", "application/json");
+            res.setHeader("Cache-Control", "no-store");
+            res.statusCode = 403;
+            res.end(JSON.stringify({ status: "error", error: rejection }));
+            return;
+          }
+
           // Check for too many attempts
           if (req.url == null) {
             throw new Error("Request URL is undefined");
@@ -205,6 +260,28 @@ export function FoundryWidgetDevPlugin(
           res.end(injectedScripts.inlineScripts.join("\n"));
         },
       );
+    },
+
+    /**
+     * When the prebuilt setup page is not available, Vite serves its own HTML fallback for the
+     * setup path, so the finish secret is injected there instead.
+     */
+    transformIndexHtml(_html, ctx): HtmlTagDescriptor[] | undefined {
+      if (
+        finishSecret == null ||
+        ctx.server == null ||
+        ctx.originalUrl == null ||
+        !ctx.originalUrl.startsWith(serverPath(ctx.server, SETUP_PATH))
+      ) {
+        return undefined;
+      }
+      return [
+        {
+          tag: "meta",
+          attrs: { name: FINISH_SECRET_META_NAME, content: finishSecret },
+          injectTo: "head-prepend",
+        },
+      ];
     },
 
     /**
@@ -282,6 +359,34 @@ export function FoundryWidgetDevPlugin(
  */
 function getFullSourcePath(source: string, importer: string): string {
   return path.resolve(path.dirname(importer), source);
+}
+
+function readSetupIndexHtml(): string | undefined {
+  try {
+    return fs.readFileSync(
+      path.resolve(DIR_DIST, "../../site/index.html"),
+      "utf8",
+    );
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * The setup site is a single page app, so any non-asset path under the setup path is served the
+ * index document.
+ */
+function isSetupDocumentRequest(
+  method: string | undefined,
+  url: string | undefined,
+): boolean {
+  if (method !== "GET" && method !== "HEAD") {
+    return false;
+  }
+  const pathname = (url ?? "/").split(/[?#]/u)[0] ?? "/";
+  return (
+    pathname.endsWith("/index.html") || path.posix.extname(pathname) === ""
+  );
 }
 
 function serverPath(server: ViteDevServer, subPath: string): string {

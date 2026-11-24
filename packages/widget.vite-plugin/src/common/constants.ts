@@ -21,6 +21,10 @@ export const FINISH_PATH: string = `${PALANTIR_PATH}/finish`;
 export const VITE_INJECTIONS_PATH: string = `${PALANTIR_PATH}/vite-injections.js`;
 export const CONFIG_FILE_SUFFIX = ".config";
 
+// The setup page reads the finish secret from this meta tag and sends it back in this header
+export const FINISH_SECRET_META_NAME = "osdk-finish-secret";
+export const FINISH_SECRET_HEADER = "x-osdk-finish-secret";
+
 export const BUILD_PLUGIN_ID = "@osdk:widget-build-plugin";
 export const DEV_PLUGIN_ID = "@osdk:widget-dev-plugin";
 
