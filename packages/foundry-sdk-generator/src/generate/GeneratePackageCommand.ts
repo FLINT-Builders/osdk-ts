@@ -24,8 +24,9 @@ import { isValidSemver } from "../utils/index.js";
 import { generatePackage } from "./betaClient/generatePackage.js";
 import { transformArrayArg } from "./commandUtils.js";
 
+const AUTH_TOKEN_ENV_VAR = "FOUNDRY_TOKEN";
+
 export interface generatePackageCommandArgs {
-  authToken: string;
   foundryHostname: string;
   ontology: string;
   objectTypes?: string[];
@@ -57,10 +58,6 @@ export class GeneratePackageCommand implements
 
   public builder(args: Argv): Argv<generatePackageCommandArgs> {
     return args
-      .positional("authToken", {
-        type: "string",
-        demandOption: true,
-      })
       .positional("foundryHostname", {
         type: "string",
         demandOption: true,
@@ -192,6 +189,9 @@ export class GeneratePackageCommand implements
           `EXPERIMENTAL: emit the raw ontology metadata as a ./experimental/ontology-metadata subpath export. May change or be removed at any time.`,
         default: false,
       })
+      .epilogue(
+        `The Foundry auth token is read from the ${AUTH_TOKEN_ENV_VAR} environment variable. It is not accepted as a command-line argument.`,
+      )
       .strict();
   }
 
@@ -212,8 +212,16 @@ export class GeneratePackageCommand implements
       exit(1);
     }
 
+    const authToken = process.env[AUTH_TOKEN_ENV_VAR];
+    if (!authToken) {
+      logger.error(
+        `Missing Foundry auth token, set the ${AUTH_TOKEN_ENV_VAR} environment variable`,
+      );
+      exit(1);
+    }
+
     const ontologyMetadataResolver = new OntologyMetadataResolver(
-      args.authToken as string,
+      authToken,
       args.foundryHostname as string,
     );
 
