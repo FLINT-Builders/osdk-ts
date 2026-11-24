@@ -39,6 +39,7 @@ import { convertActionValidation } from "../conversion/toMarketplace/convertActi
 import { convertOntologyDefinition } from "../conversion/toMarketplace/convertOntologyDefinition.js";
 import { convertOntologyToValueTypeIr } from "../conversion/toMarketplace/convertOntologyToValueTypeIr.js";
 import { getFormContentOrdering } from "../conversion/toMarketplace/getFormContentOrdering.js";
+import { serializeEntitySource } from "../util/serializeEntitySource.js";
 import type {
   ActionParameter,
   ActionParameterValidation,
@@ -72,6 +73,9 @@ export let dependencies: Record<string, string>;
 
 /** @internal */
 export let namespace: string;
+
+// Generated names are used both as TypeScript bindings and as file names.
+const SAFE_IDENTIFIER = /^[A-Za-z_$][A-Za-z0-9_$]*$/u;
 
 export function updateOntology<T extends OntologyEntityType>(entity: T): void {
   if (entity.__type !== OntologyEntityTypeEnum.VALUE_TYPE) {
@@ -186,16 +190,16 @@ export function writeStaticObjects(outputDir: string): void {
             OntologyEntityTypeEnum.VALUE_TYPE
               ? "ValueType"
               : "");
+          if (!SAFE_IDENTIFIER.test(entityFileNameBase)) {
+            throw new Error(
+              `Cannot generate a TypeScript identifier for apiName ${JSON.stringify(
+                apiName,
+              )}`,
+            );
+          }
           const filePath = path.join(typeDirPath, `${entityFileNameBase}.ts`);
           const entityTypeName = getEntityTypeName(ontologyTypeEnumKey);
-          const entityJSON = JSON.stringify(
-            sanitizeTypes(entity),
-            null,
-            2,
-          ).replace(
-            /("__type"\s*:\s*)"([^"]*)"/gu,
-            (_, prefix, value) => `${prefix}OntologyEntityTypeEnum.${value}`,
-          );
+          const entityJSON = serializeEntitySource(sanitizeTypes(entity));
           const content = `
 import { wrapWithProxy, OntologyEntityTypeEnum } from '@osdk/maker';
 import type { ${entityTypeName} } from '@osdk/maker';
@@ -794,7 +798,7 @@ function dependencyInjectionString(): string {
 
   return `import { addDependency } from "@osdk/maker";
 // @ts-ignore
-addDependency("${namespaceNoDot}", new URL(import.meta.url).pathname);
+addDependency(${JSON.stringify(namespaceNoDot)}, new URL(import.meta.url).pathname);
 `;
 }
 

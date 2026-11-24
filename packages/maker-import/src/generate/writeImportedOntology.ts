@@ -25,7 +25,11 @@ import { convertActionType } from "./convertActionType.js";
 import { convertInterfaceType } from "./convertInterfaceType.js";
 import { convertObjectType } from "./convertObjectType.js";
 import { convertSharedPropertyType } from "./convertSharedPropertyType.js";
+import { serializeEntitySource } from "./serializeEntitySource.js";
 import { camel, fullCamel, withoutNamespace } from "./utils.js";
+
+// Generated names are used both as TypeScript bindings and as file names.
+const SAFE_IDENTIFIER = /^[A-Za-z_$][A-Za-z0-9_$]*$/u;
 
 const TYPE_NAME_MAP: Record<string, string> = {
   [OntologyEntityTypeEnum.OBJECT_TYPE]: "ObjectType",
@@ -133,15 +137,6 @@ export function writeImportedOntology(
 ): void {
   const codegenDir = path.resolve(outputDir, "codegen");
 
-  // Clean and create directories
-  for (const dirName of Object.values(DIR_NAME_MAP)) {
-    const dirPath = path.join(codegenDir, dirName);
-    if (fs.existsSync(dirPath)) {
-      fs.rmSync(dirPath, { recursive: true, force: true });
-    }
-    fs.mkdirSync(dirPath, { recursive: true });
-  }
-
   // Pass 1: Convert all entities
   const entries: EntityEntry[] = [];
   const convertedOntology = convertOntologyFullMetadata(metadata);
@@ -163,6 +158,24 @@ export function writeImportedOntology(
 
   // Pass 2: Resolve unique variable names across all entities
   const varNames = resolveVarNames(entries.map((e) => e.apiName));
+  for (let i = 0; i < entries.length; i++) {
+    if (!SAFE_IDENTIFIER.test(varNames[i])) {
+      throw new Error(
+        `Cannot generate a TypeScript identifier for apiName ${JSON.stringify(
+          entries[i].apiName,
+        )}`,
+      );
+    }
+  }
+
+  // Clean and create directories
+  for (const dirName of Object.values(DIR_NAME_MAP)) {
+    const dirPath = path.join(codegenDir, dirName);
+    if (fs.existsSync(dirPath)) {
+      fs.rmSync(dirPath, { recursive: true, force: true });
+    }
+    fs.mkdirSync(dirPath, { recursive: true });
+  }
 
   // Pass 3: Write files with resolved names
   const topLevelExports: string[] = [];
@@ -194,10 +207,7 @@ function writeEntityFile(
   const typeName = TYPE_NAME_MAP[entityType];
   const dirName = DIR_NAME_MAP[entityType];
 
-  const entityJSON = JSON.stringify(entity, null, 2).replace(
-    /("__type"\s*:\s*)"([^"]*)"/gu,
-    (_, prefix, value) => `${prefix}OntologyEntityTypeEnum.${value}`,
-  );
+  const entityJSON = serializeEntitySource(entity);
 
   const content = `import { wrapWithProxy, OntologyEntityTypeEnum } from '@osdk/maker';
 import type { ${typeName} } from '@osdk/maker';
@@ -205,7 +215,7 @@ import type { ${typeName} } from '@osdk/maker';
 /** @type {import('@osdk/maker').${typeName}} */
 const ${varName}_base: ${typeName} = ${entityJSON} as unknown as ${typeName};
 
-export const ${varName}: ${typeName} = wrapWithProxy(${varName}_base);
+export const ${varName} = wrapWithProxy<${typeName}>(${varName}_base);
 `;
 
   const filePath = path.join(codegenDir, dirName, `${varName}.ts`);
