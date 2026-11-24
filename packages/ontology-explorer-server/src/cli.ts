@@ -22,6 +22,10 @@ import { hideBin } from "yargs/helpers";
 
 import { createServer } from "./server.js";
 
+// The explorer serves the ontology file without authentication, so it must
+// only be reachable from this machine.
+const LISTEN_HOST = "127.0.0.1";
+
 export async function cli(args: string[] = process.argv): Promise<void> {
   const argv = await yargs(hideBin(args))
     .option("ontology-file", {
@@ -48,9 +52,9 @@ export async function cli(args: string[] = process.argv): Promise<void> {
     const app = createServer(argv.ontologyFile);
 
     app
-      .listen(argv.port, () => {
+      .listen(argv.port, LISTEN_HOST, () => {
         consola.log(
-          `Ontology Explorer listening on http://localhost:${argv.port}`,
+          `Ontology Explorer listening on http://${LISTEN_HOST}:${argv.port}`,
         );
       })
       .on("error", (err: NodeJS.ErrnoException) => {
