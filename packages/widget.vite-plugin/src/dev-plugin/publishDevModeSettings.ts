@@ -20,6 +20,10 @@ import { inspect } from "node:util";
 import { loadFoundryConfig } from "@osdk/foundry-config-json";
 import type { ViteDevServer } from "vite";
 
+import {
+  authorizeEnvironmentFoundryUrl,
+  authorizeProjectFoundryUrl,
+} from "./authorizeFoundryUrl.js";
 import type { DevModeManifest } from "./buildDevModeManifest.js";
 import {
   getCodeWorkspacesFoundryUrl,
@@ -76,12 +80,10 @@ export async function publishDevModeSettings(
     if (foundryConfig == null) {
       throw new Error("foundry.config.json file not found.");
     }
-    const rawFoundryUrl = isCodeWorkspacesMode(server.config.mode)
-      ? getCodeWorkspacesFoundryUrl()
-      : foundryConfig.foundryConfig.foundryUrl;
-    const foundryUrl = rawFoundryUrl.endsWith("/")
-      ? rawFoundryUrl
-      : rawFoundryUrl + "/";
+    // Bind the stack URL once so that both requests and the redirect use the URL that was checked
+    const foundryUrl = isCodeWorkspacesMode(server.config.mode)
+      ? authorizeEnvironmentFoundryUrl(getCodeWorkspacesFoundryUrl())
+      : authorizeProjectFoundryUrl(foundryConfig.foundryConfig.foundryUrl);
 
     const widgetSetRid = foundryConfig.foundryConfig.widgetSet.rid;
     const settingsResponse = await setWidgetSetManifest(
@@ -124,7 +126,7 @@ export async function publishDevModeSettings(
           ? null
           : new URL(
               `workspace/custom-widgets/preview/${widgetSetRid}`,
-              foundryUrl,
+              foundryUrl.baseUrl,
             ).toString(),
       }),
     );
