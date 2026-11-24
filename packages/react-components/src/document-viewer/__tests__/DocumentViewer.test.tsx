@@ -19,6 +19,13 @@ import { cleanup, render } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { TiffViewer } from "../../images/tiff-viewer/TiffViewer.js";
+import {
+  captureCreatedBlobs,
+  expectNoScriptableBlobs,
+  mediaReturning,
+  mediaTypeEssence,
+  settleMediaViewer,
+} from "../../test/scriptableBlobUrl.js";
 import { DocumentViewer } from "../DocumentViewer.js";
 import { TiffDocumentViewer } from "../TiffDocumentViewer.js";
 
@@ -89,5 +96,53 @@ describe("DocumentViewer deprecated viewer props", () => {
     expect(mockedTiffDocumentViewer.mock.calls[0]?.[0]).toMatchObject({
       tiffViewerProps: { onError },
     });
+  });
+});
+
+describe("DocumentViewer image blob URL content type", () => {
+  it.each([
+    ["image/svg+xml", undefined],
+    ["image/svg+xml; charset=utf-8", undefined],
+    ["image/svg+xml", "image/svg+xml"],
+    ["text/html", "image/png"],
+  ] as const)(
+    "does not publish a scriptable blob URL when the response is %s",
+    async (contentType, mimeTypeOverride) => {
+      const capture = captureCreatedBlobs();
+      try {
+        render(
+          <DocumentViewer
+            media={mediaReturning(contentType, "image/svg+xml")}
+            mimeTypeOverride={mimeTypeOverride}
+          />,
+        );
+        await settleMediaViewer();
+        expectNoScriptableBlobs(capture.blobs);
+      } finally {
+        capture.restore();
+      }
+    },
+  );
+
+  it("still renders a png media reference from a blob URL", async () => {
+    const capture = captureCreatedBlobs();
+    try {
+      const { container } = render(
+        <DocumentViewer
+          media={mediaReturning("image/png", "image/png", "png-bytes")}
+        />,
+      );
+      await settleMediaViewer();
+      const img = container.querySelector("img");
+      expect(img?.getAttribute("src")?.startsWith("blob:")).toBe(true);
+      expect(
+        capture.blobs.some(
+          (blob) => mediaTypeEssence(blob.type) === "image/png",
+        ),
+      ).toBe(true);
+      expectNoScriptableBlobs(capture.blobs);
+    } finally {
+      capture.restore();
+    }
   });
 });

@@ -206,4 +206,95 @@ describe("MediaHelper", () => {
       expect(cached).toBeUndefined();
     });
   });
+
+  describe("scriptable media content types", () => {
+    const coords: MediaPropertyLocation = {
+      objectType: "Employee",
+      primaryKey: "123",
+      propertyName: "avatar",
+    };
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg"><script>localStorage.getItem("@osdk/oauth : refresh : placeholder-client")</script></svg>`;
+
+    function essence(type: string): string {
+      return type.split(";")[0]?.trim().toLowerCase() ?? "";
+    }
+
+    function isScriptable(type: string): boolean {
+      return (
+        essence(type) === "image/svg+xml" ||
+        essence(type) === "text/html" ||
+        essence(type) === "text/xml" ||
+        essence(type) === "application/xml"
+      );
+    }
+
+    function expectStoredBlobSafe(blob: Blob | undefined): void {
+      if (blob != null) {
+        expect(
+          isScriptable(blob.type),
+          `cached a scriptable blob of type ${JSON.stringify(blob.type)}`,
+        ).toBe(false);
+      }
+    }
+
+    it.each([
+      "image/svg+xml",
+      "image/svg+xml; charset=utf-8",
+      "text/html",
+      "text/xml",
+      "application/xml",
+    ])(
+      "does not keep a scriptable blob from getMediaContent (%s)",
+      async (contentType) => {
+        vi.mocked(
+          OntologiesV2.MediaReferenceProperties.getMediaContent,
+        ).mockResolvedValue(
+          new Response(svg, { headers: { "content-type": contentType } }),
+        );
+        let fetched: Blob | undefined;
+        try {
+          fetched = await mediaHelper.fetchContent(coords);
+        } catch {
+          fetched = undefined;
+        }
+        expectStoredBlobSafe(fetched);
+        expectStoredBlobSafe(mediaHelper.getCachedContent(coords));
+        const url = mediaHelper.createBlobUrl(coords);
+        if (url != null) {
+          expectStoredBlobSafe(mediaHelper.getCachedContent(coords));
+        }
+      },
+    );
+
+    it("does not keep a scriptable blob from fetchContents", async () => {
+      const media: Media = {
+        fetchContents: () =>
+          Promise.resolve(
+            new Response(svg, {
+              headers: { "content-type": "image/svg+xml; charset=utf-8" },
+            }),
+          ),
+        fetchMetadata: vi.fn(),
+        getMediaReference: () => ({
+          mimeType: "image/png",
+          reference: {
+            type: "mediaSetViewItem",
+            mediaSetViewItem: {
+              mediaSetRid: "rid1",
+              mediaSetViewRid: "rid2",
+              mediaItemRid: "rid3",
+            },
+          },
+        }),
+      };
+      let fetched: Blob | undefined;
+      try {
+        fetched = await mediaHelper.fetchContent(media);
+      } catch {
+        fetched = undefined;
+      }
+      expectStoredBlobSafe(fetched);
+      expectStoredBlobSafe(mediaHelper.getCachedContent(media));
+    });
+  });
 });
