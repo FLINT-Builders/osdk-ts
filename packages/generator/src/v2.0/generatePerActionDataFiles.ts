@@ -79,7 +79,7 @@ export async function generatePerActionDataFiles(
         export type ParamsDefinition = {
           ${
           entries.map(([key, value]) => {
-            return `"${key}": {
+            return `${JSON.stringify(key)}: {
                 ${
               stringify(value, {
                 description: (value, d) => value ? d(value) : undefined, // trick to remove undefineds
@@ -185,7 +185,9 @@ export async function generatePerActionDataFiles(
           stringify(fullActionDef.parameters, {
             "*": (ogValue, _, ogKey) => {
               const key = `${getDescriptionIfPresent(ogValue.description)}
-                  readonly "${ogKey}"${ogValue.nullable ? "?" : ""}`;
+                  readonly ${JSON.stringify(ogKey)}${
+                ogValue.nullable ? "?" : ""
+              }`;
 
               const value = (ogValue.multiplicity
                 ? `ReadonlyArray<${getActionParamType(ogValue.type)}>`
@@ -193,7 +195,7 @@ export async function generatePerActionDataFiles(
                 + (ogValue.nullable ? " | null" : "");
               jsDocBlock.push(
                 `* @param {${getActionParamType(ogValue.type)}} ${
-                  ogValue.nullable ? `[${ogKey}]` : ogKey
+                  escapeJsDocText(ogValue.nullable ? `[${ogKey}]` : ogKey)
                 } ${escapeJsDocText(ogValue.description ?? "")}`,
               );
               return [key, value];

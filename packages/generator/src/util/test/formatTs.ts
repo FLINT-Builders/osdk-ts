@@ -16,18 +16,12 @@
 
 import { format } from "prettier";
 
-export function formatTs(contents: string): string | Promise<string> {
-  try {
-    return format(contents, {
-      parser: "typescript",
-      singleQuote: true,
-      trailingComma: "all",
-      tabWidth: 2,
-      printWidth: 120,
-    });
-  } catch (e) {
-    console.error("Failed to format file", e);
-    console.log(contents);
-    return contents;
-  }
+export async function formatTs(contents: string): Promise<string> {
+  return await format(contents, {
+    parser: "typescript",
+    singleQuote: true,
+    trailingComma: "all",
+    tabWidth: 2,
+    printWidth: 120,
+  });
 }

@@ -18,6 +18,10 @@ import { enhanceOntology } from "../GenerateContext/enhanceOntology.js";
 import type { GenerateContext } from "../GenerateContext/GenerateContext.js";
 import type { MinimalFs } from "../MinimalFs.js";
 import { verifyOutDir } from "../util/verifyOutDir.js";
+import {
+  validateExternalApiNames,
+  validateWireOntologyAssumptions,
+} from "../validateWireOntologyAssumptions.js";
 import type { WireOntologyDefinition } from "../WireOntologyDefinition.js";
 import {
   generateOntologyMetadataJSONFile,
@@ -43,6 +47,11 @@ export async function generateClientSdkVersionTwoPointZero(
   exportOntologyMetadata: boolean = false,
 ): Promise<void> {
   const importExt = ".js"; // turns out you can always use the extension
+
+  validateWireOntologyAssumptions(ontology);
+  validateExternalApiNames(externalObjects);
+  validateExternalApiNames(externalInterfaces);
+  validateExternalApiNames(externalSpts);
 
   // Structurally, we need to have multiple ontologies read in
   // with one per package.

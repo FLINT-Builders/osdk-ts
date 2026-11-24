@@ -32,18 +32,20 @@ export async function generateOntologyMetadataTypeFile(
     await formatTs(
       `
       export type $ExpectedClientVersion = "${ExpectedOsdkVersion}";
-      export const $osdkMetadata = { extraUserAgent: "${userAgent}" };
+      export const $osdkMetadata = { extraUserAgent: ${
+        JSON.stringify(userAgent)
+      } };
       ${
         ontologyApiNamespace == null
           ? `
-        export const $ontologyRid = "${ontology.ontology.rid}";
+        export const $ontologyRid = ${JSON.stringify(ontology.ontology.rid)};
         /**
          * The RID of the Foundry branch this SDK was generated against, or
          * \`undefined\` if it was generated against the main branch.
          */
         export const $branch: string | undefined = ${
             ontology.raw.branch != null
-              ? `"${ontology.raw.branch.rid}"`
+              ? JSON.stringify(ontology.raw.branch.rid)
               : "undefined"
           };
         `

@@ -18,8 +18,6 @@ export function stringUnionFrom(values: ReadonlyArray<string>): string {
   if (values.length === 0) {
     return "never";
   } else {
-    return values.map(v =>
-      `"${v.replaceAll("\\", "\\\\").replaceAll("\"", "\\\"")}"`
-    ).join(" | ");
+    return values.map(v => JSON.stringify(v)).join(" | ");
   }
 }
