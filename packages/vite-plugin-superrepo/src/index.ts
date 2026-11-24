@@ -22,6 +22,7 @@ import type { Logger, Plugin, ProxyOptions, UserConfig } from "vite";
 
 import {
   type DiscoveryEntry,
+  type DiscoveryRead,
   type DiscoveryService,
   findSuperrepoRoot,
   inspectDiscovery,
@@ -88,8 +89,15 @@ export function smartClientPlugin(): Plugin {
       const proxy: Record<string, ProxyOptions> = {};
       const palantirDir = path.join(superrepoRoot, ".palantir");
 
+      // Several routes share a service; read each discovery file exactly once
+      // so every route proxies to the same validated entry.
+      const reads = new Map<DiscoveryService, DiscoveryRead>();
       for (const route of PROXY_ROUTES) {
-        const read = inspectDiscovery(superrepoRoot, route.service);
+        let read = reads.get(route.service);
+        if (read === undefined) {
+          read = inspectDiscovery(superrepoRoot, route.service);
+          reads.set(route.service, read);
+        }
         if (read.kind === "ok") {
           const context = `${basePrefix}${route.prefix}`;
           proxy[context] = buildProxyOptions(

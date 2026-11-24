@@ -96,10 +96,28 @@ export function inspectDiscovery(
   if (!isDiscoveryEntry(parsed)) {
     return { kind: "malformed", reason: "missing required fields (pid, url)" };
   }
+  const url = toLoopbackUrl(parsed.url);
+  if (url === undefined) {
+    return {
+      kind: "malformed",
+      reason:
+        "url must be an http(s) URL on a loopback host " +
+        "(localhost, 127.0.0.0/8, or [::1]) with no credentials, query, or fragment",
+    };
+  }
   if (!isPidAlive(parsed.pid)) {
     return { kind: "stale", pid: parsed.pid };
   }
-  return { kind: "ok", entry: parsed };
+  return {
+    kind: "ok",
+    entry: {
+      pid: parsed.pid,
+      url,
+      ...(parsed.caCertPath !== undefined
+        ? { caCertPath: parsed.caCertPath }
+        : {}),
+    },
+  };
 }
 
 /**
@@ -118,18 +136,51 @@ export function readDiscovery(
 /**
  * Liveness check via `process.kill(pid, 0)`, which sends signal 0 (a no-op
  * that still triggers the kernel's permission check). The check succeeds
- * iff the PID corresponds to a process the caller can see; EPERM (we lack
- * permission) is still treated as "alive". ESRCH means dead. Works on
- * Unix and Windows (Node maps `kill` accordingly).
+ * iff the PID corresponds to a process the caller is allowed to signal,
+ * i.e. one owned by the same user as the dev server. EPERM (a process owned
+ * by another user, such as PID 1) and ESRCH (dead) are both rejected: a
+ * discovery file must be published by a service the developer started.
+ * Works on Unix and Windows (Node maps `kill` accordingly).
  */
 function isPidAlive(pid: number): boolean {
   if (!Number.isInteger(pid) || pid <= 0) return false;
   try {
     process.kill(pid, 0);
     return true;
-  } catch (e) {
-    return (e as NodeJS.ErrnoException).code === "EPERM";
+  } catch {
+    return false;
   }
+}
+
+/**
+ * Discovery URLs become proxy targets that receive the developer's Foundry
+ * bearer token, so only loopback http(s) targets are accepted. Returns the
+ * URL re-serialized from its parsed form so every later consumer (including
+ * the proxy's own URL parser) sees the exact host that was validated.
+ */
+function toLoopbackUrl(raw: string): string | undefined {
+  let url: URL;
+  try {
+    url = new URL(raw);
+  } catch {
+    return undefined;
+  }
+  if (url.protocol !== "http:" && url.protocol !== "https:") return undefined;
+  if (url.username !== "" || url.password !== "") return undefined;
+  if (url.search !== "" || url.hash !== "") return undefined;
+  if (!isLoopbackHostname(url.hostname)) return undefined;
+  const pathname = url.pathname === "/" ? "" : url.pathname;
+  return `${url.origin}${pathname}`;
+}
+
+function isLoopbackHostname(hostname: string): boolean {
+  // `URL` lowercases hostnames and canonicalizes IPv4 literals (e.g.
+  // `0x7f.1` → `127.0.0.1`), so string checks on the parsed form are exact.
+  return (
+    hostname === "localhost" ||
+    hostname === "[::1]" ||
+    /^127\.\d{1,3}\.\d{1,3}\.\d{1,3}$/u.test(hostname)
+  );
 }
 
 function isDiscoveryEntry(value: unknown): value is DiscoveryEntry {
