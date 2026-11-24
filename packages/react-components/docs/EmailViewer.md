@@ -75,7 +75,7 @@ import { BaseEmailViewer } from "@osdk/react-components/email-viewer";
 
 ## Security
 
-HTML email bodies are rendered inside a sandboxed `<iframe>` with `sandbox="allow-same-origin"`. This prevents script execution, form submissions, and popups from the email content.
+HTML email bodies are rendered inside a fully sandboxed `<iframe>` (`sandbox=""`). This prevents script execution, form submissions, popups, and top-level navigation from the email content, and gives the email document an opaque origin, so resources it loads are requested as a cross-site context rather than as your application's origin. The iframe also sets `referrerpolicy="no-referrer"` and, in browsers that support it, `credentialless`, which loads those resources without cookies.
 
 ## Theming
 
