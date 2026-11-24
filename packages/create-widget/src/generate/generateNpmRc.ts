@@ -14,6 +14,10 @@
  * limitations under the License.
  */
 
+import { parseFoundryUrl, parseRegistryUrl } from "../parseFoundryUrl.js";
+
+const PACKAGE_SCOPE = /^@[a-z0-9][a-z0-9._~-]*$/u;
+
 export function generateNpmRc({
   foundryUrl,
   osdkPackage,
@@ -23,19 +27,24 @@ export function generateNpmRc({
   osdkPackage: string;
   osdkRegistryUrl: string;
 }): string {
+  const foundryHost = parseFoundryUrl(
+    /^[a-z][a-z0-9+.-]*:\/\//iu.test(foundryUrl)
+      ? foundryUrl
+      : `https://${foundryUrl}`,
+  ).host;
   // pnpm requires a trailing slash in .npmrc
   // https://github.com/pnpm/pnpm/issues/5941
-  const osdkRegistryUrlWithTrailingSlash = osdkRegistryUrl.endsWith("/")
-    ? osdkRegistryUrl
-    : osdkRegistryUrl + "/";
-  const formattedFoundryUrl = foundryUrl
-    .replace(/^https:\/\//u, "")
-    .replace(/\/$/u, "");
-  const artifactsApiUrl = formattedFoundryUrl + "/artifacts/api/";
+  const osdkRegistryUrlWithTrailingSlash =
+    parseRegistryUrl(osdkRegistryUrl).href;
   const packageScope = osdkPackage.split("/")[0];
+  if (!PACKAGE_SCOPE.test(packageScope)) {
+    throw new Error(
+      `Invalid OSDK package scope: ${JSON.stringify(osdkPackage)}`,
+    );
+  }
 
   return (
-    `//${artifactsApiUrl}:_authToken=\${FOUNDRY_TOKEN}\n` +
+    `//${foundryHost}/artifacts/api/:_authToken=\${FOUNDRY_TOKEN}\n` +
     `${packageScope}:registry=${osdkRegistryUrlWithTrailingSlash}\n`
   );
 }

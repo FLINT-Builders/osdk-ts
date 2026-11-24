@@ -23,6 +23,7 @@ import { consola } from "./consola.js";
 import { generateFoundryConfigJson } from "./generate/generateFoundryConfigJson.js";
 import { generateNpmRc } from "./generate/generateNpmRc.js";
 import { green } from "./highlight.js";
+import { parseFoundryUrl } from "./parseFoundryUrl.js";
 import type { SdkVersion, Template, TemplateContext } from "./templates.js";
 
 interface RunArgs {
@@ -42,7 +43,7 @@ export async function run({
   overwrite,
   template,
   sdkVersion,
-  foundryUrl,
+  foundryUrl: rawFoundryUrl,
   widgetSet,
   repository,
   osdkPackage,
@@ -52,6 +53,18 @@ export async function run({
   consola.start(
     `Creating project ${green(project)} using template ${green(template.id)}`,
   );
+
+  const foundryUrl = parseFoundryUrl(rawFoundryUrl).origin;
+  let npmRc: string | undefined;
+  const useOsdk = osdkPackage != null || osdkRegistryUrl != null;
+  if (useOsdk) {
+    if (osdkPackage == null || osdkRegistryUrl == null) {
+      throw new Error(
+        `Template ${template.id} requires OSDK package and registry URL`,
+      );
+    }
+    npmRc = generateNpmRc({ osdkPackage, osdkRegistryUrl, foundryUrl });
+  }
 
   const cwd = process.cwd();
   const root = path.join(cwd, project);
@@ -149,14 +162,7 @@ export async function run({
   };
   processFiles(root);
 
-  const useOsdk = osdkPackage != null || osdkRegistryUrl != null;
-  if (useOsdk) {
-    if (osdkPackage == null || osdkRegistryUrl == null) {
-      throw new Error(
-        `Template ${template.id} requires OSDK package and registry URL`,
-      );
-    }
-    const npmRc = generateNpmRc({ osdkPackage, osdkRegistryUrl, foundryUrl });
+  if (npmRc != null) {
     fs.writeFileSync(path.join(root, ".npmrc"), npmRc);
   }
 

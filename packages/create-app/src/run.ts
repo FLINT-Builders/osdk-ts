@@ -32,6 +32,7 @@ import {
 import { generateFoundryConfigJson } from "./generate/generateFoundryConfigJson.js";
 import { generateNpmRc } from "./generate/generateNpmRc.js";
 import { green } from "./highlight.js";
+import { parseFoundryUrl } from "./parseFoundryUrl.js";
 import type { SdkVersion, Template, TemplateContext } from "./templates.js";
 
 interface RunArgs {
@@ -57,7 +58,7 @@ export async function run({
   overwrite,
   template,
   sdkVersion,
-  foundryUrl,
+  foundryUrl: rawFoundryUrl,
   applicationUrl,
   application,
   ontology,
@@ -74,6 +75,9 @@ export async function run({
   );
 
   const isAuthless = template.authless ?? false;
+
+  const foundryUrl = parseFoundryUrl(rawFoundryUrl).origin;
+  const npmRc = generateNpmRc({ osdkPackage, osdkRegistryUrl, foundryUrl });
 
   const cwd = process.cwd();
   const root = path.join(cwd, project);
@@ -210,7 +214,6 @@ export async function run({
     fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2));
   }
 
-  const npmRc = generateNpmRc({ osdkPackage, osdkRegistryUrl, foundryUrl });
   fs.writeFileSync(path.join(root, ".npmrc"), npmRc);
 
   const envDevelopment = isAuthless
