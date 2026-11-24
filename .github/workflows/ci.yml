@@ -443,7 +443,12 @@ jobs:
 
       - name: Setup Verdaccio
         run: |
-          npx npm-auth-to-token -u verdaccio -p fake -e fake@palantir.com -r http://localhost:4873
+          token="$(curl --silent --show-error --fail -X PUT --user verdaccio:fake \
+            -H 'Content-Type: application/json' \
+            -d '{"name":"verdaccio","password":"fake","email":"fake@palantir.com"}' \
+            http://localhost:4873/-/user/org.couchdb.user:verdaccio \
+            | node -e 'let b="";process.stdin.on("data",(c)=>b+=c).on("end",()=>process.stdout.write(JSON.parse(b).token))')"
+          npm config set //localhost:4873/:_authToken "$token"
           npm config set registry http://localhost:4873
 
       - name: Faux Release
@@ -570,7 +575,7 @@ jobs:
         run: pnpm install && pnpm exec turbo transpile
 
       - name: Measure bundle size (PR)
-        run: npx size-limit --json > /tmp/current.json || true
+        run: pnpm exec size-limit --json > /tmp/current.json || true
 
       - name: Checkout base branch
         run: |
@@ -581,7 +586,7 @@ jobs:
         run: pnpm exec turbo clean && pnpm install && pnpm exec turbo transpile
 
       - name: Measure bundle size (base)
-        run: npx size-limit --json > /tmp/base.json || true
+        run: pnpm exec size-limit --json > /tmp/base.json || true
 
       - name: Compare and comment
         env:
