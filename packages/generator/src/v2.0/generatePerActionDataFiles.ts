@@ -352,9 +352,9 @@ export async function generatePerActionDataFiles(
     await formatTs(`
       ${
       Object.values(enhancedOntology.actionTypes).map(action => {
-        const exportConstLine = `export {${action.shortApiName} } from "${
-          action.getImportPathRelTo(indexFileRelPath)
-        }";`;
+        const exportConstLine = `export {${action.shortApiName} } from ${
+          JSON.stringify(action.getImportPathRelTo(indexFileRelPath))
+        };`;
 
         return exportConstLine;
       })
