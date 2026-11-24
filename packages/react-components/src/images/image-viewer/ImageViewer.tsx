@@ -19,18 +19,43 @@ import classnames from "classnames";
 import React from "react";
 
 import { useMediaContents } from "../../shared/hooks/useMediaContents.js";
+import {
+  createSameOriginObjectUrl,
+  getMediaTypeEssence,
+  OPAQUE_BINARY_TYPE,
+  readBlobAsDataUrl,
+  revokeIfObjectUrl,
+} from "../../shared/mediaObjectUrl.js";
 import { BaseImageViewer } from "./BaseImageViewer.js";
 import type { ImageViewerProps } from "./ImageViewerApi.js";
 
 import styles from "./BaseImageViewer.module.css";
 
-const transformToObjectUrl = async (response: Response): Promise<string> => {
-  const blob = await response.blob();
-  return URL.createObjectURL(blob);
-};
+const RASTER_IMAGE_TYPES = new Set([
+  "image/png",
+  "image/jpeg",
+  "image/gif",
+  "image/webp",
+  "image/bmp",
+]);
 
-const cleanupObjectUrl = (url: string): void => {
-  URL.revokeObjectURL(url);
+const SVG_TYPE = "image/svg+xml";
+
+function toRasterImageType(essence: string | undefined): string {
+  return essence != null && RASTER_IMAGE_TYPES.has(essence)
+    ? essence
+    : OPAQUE_BINARY_TYPE;
+}
+
+const transformToImageSrc = async (response: Response): Promise<string> => {
+  if (getMediaTypeEssence(response.headers.get("content-type")) === SVG_TYPE) {
+    // An SVG blob URL would be a same-origin document when opened in a tab.
+    // A data URL renders the same in <img> but gets an opaque origin if
+    // navigated to, so its scripts cannot reach the app's storage.
+    const bytes = await response.arrayBuffer();
+    return readBlobAsDataUrl(new Blob([bytes], { type: SVG_TYPE }));
+  }
+  return createSameOriginObjectUrl(response, toRasterImageType);
 };
 
 export function ImageViewer({
@@ -42,7 +67,7 @@ export function ImageViewer({
     data: src,
     loading,
     error,
-  } = useMediaContents(media, transformToObjectUrl, cleanupObjectUrl);
+  } = useMediaContents(media, transformToImageSrc, revokeIfObjectUrl);
 
   const rootClassName = classnames(styles.container, className);
 
