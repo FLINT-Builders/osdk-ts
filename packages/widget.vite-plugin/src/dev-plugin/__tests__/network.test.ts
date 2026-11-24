@@ -20,6 +20,7 @@ vi.mock("../getFoundryToken.js", () => ({
   getFoundryToken: vi.fn(() => "test-token"),
 }));
 
+import { authorizeEnvironmentFoundryUrl } from "../authorizeFoundryUrl.js";
 import type { DevModeManifest } from "../buildDevModeManifest.js";
 import { enableDevMode, setWidgetSetManifest } from "../network.js";
 
@@ -59,7 +60,7 @@ describe("network", () => {
   ])("setWidgetSetManifest %s", (_, foundryUrl) => {
     test("fetches the expected URL", async () => {
       await setWidgetSetManifest(
-        foundryUrl,
+        authorizeEnvironmentFoundryUrl(foundryUrl),
         "ri.widgetregistry..widget-set.test",
         MOCK_MANIFEST,
         undefined,
@@ -78,7 +79,10 @@ describe("network", () => {
     ["without trailing slash", "https://example.palantirfoundry.com"],
   ])("enableDevMode %s", (_, foundryUrl) => {
     test("fetches the expected URL", async () => {
-      await enableDevMode(foundryUrl, undefined);
+      await enableDevMode(
+        authorizeEnvironmentFoundryUrl(foundryUrl),
+        undefined,
+      );
       expect(getFetchedUrl(fetchMock)).toBe(
         "https://example.palantirfoundry.com/api/v2/widgets/devModeSettingsV2/enable?preview=true",
       );
@@ -86,5 +90,35 @@ describe("network", () => {
         `osdk-widget.vite-plugin/${process.env.PACKAGE_VERSION}`,
       );
     });
+  });
+
+  test("does not follow redirects with the token", async () => {
+    const foundryUrl = authorizeEnvironmentFoundryUrl(
+      "https://example.palantirfoundry.com",
+    );
+    await setWidgetSetManifest(
+      foundryUrl,
+      "ri.widgetregistry..widget-set.test",
+      MOCK_MANIFEST,
+      undefined,
+    );
+    await enableDevMode(foundryUrl, undefined);
+    expect(fetchMock.mock.calls.map((call) => call[1]?.redirect)).toEqual([
+      "error",
+      "error",
+    ]);
+  });
+
+  test("refuses a Foundry URL that was not authorized", () => {
+    expect(() =>
+      enableDevMode(
+        {
+          origin: "https://example.palantirfoundry.com",
+          baseUrl: "https://example.palantirfoundry.com/",
+        },
+        undefined,
+      ),
+    ).toThrow("Foundry URL has not been authorized.");
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });

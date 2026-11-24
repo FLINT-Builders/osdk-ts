@@ -169,3 +169,11 @@ This vite plugin will then discover both entrypoints and output a combined `.pal
 ## Developer mode
 
 The vite plugin also automatically configures developer mode so that you can preview the changes you make locally live on your Foundry environment. For developer mode to work, make sure you set a `FOUNDRY_TOKEN` environment variable that has a token with access to your Foundry stack.
+
+Developer mode only sends `FOUNDRY_TOKEN` to Foundry stacks that you have explicitly trusted. Set the `OSDK_WIDGET_DEV_FOUNDRY_ORIGINS` environment variable to a comma-separated list of https origins, matching the `foundryUrl` in `foundry.config.json`:
+
+```sh
+export OSDK_WIDGET_DEV_FOUNDRY_ORIGINS=https://{YOUR_STACK_URL}
+```
+
+This is read from your environment rather than the project so that a `foundry.config.json` you did not write cannot direct your token to another host.

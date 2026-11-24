@@ -14,20 +14,22 @@
  * limitations under the License.
  */
 
+import type { AuthorizedFoundryUrl } from "./authorizeFoundryUrl.js";
+import { resolveAuthorizedFoundryUrl } from "./authorizeFoundryUrl.js";
 import type { DevModeManifest } from "./buildDevModeManifest.js";
 import { getFoundryToken } from "./getFoundryToken.js";
 
 const USER_AGENT = `osdk-widget.vite-plugin/${process.env.PACKAGE_VERSION}`;
 
 export function setWidgetSetManifest(
-  foundryUrl: string,
+  foundryUrl: AuthorizedFoundryUrl,
   widgetSetRid: string,
   manifest: DevModeManifest,
   viteMode: string | undefined,
 ): Promise<Response> {
-  const url = new URL(
-    "api/v2/widgets/devModeSettingsV2/setWidgetSetManifest",
+  const url = resolveAuthorizedFoundryUrl(
     foundryUrl,
+    "api/v2/widgets/devModeSettingsV2/setWidgetSetManifest",
   );
   url.searchParams.set("preview", "true");
   return fetch(url, {
@@ -36,6 +38,8 @@ export function setWidgetSetManifest(
       manifest,
     }),
     method: "POST",
+    // Redirects would carry the token to a location that was never authorized
+    redirect: "error",
     headers: {
       authorization: `Bearer ${getFoundryToken(viteMode)}`,
       accept: "application/json",
@@ -46,13 +50,18 @@ export function setWidgetSetManifest(
 }
 
 export function enableDevMode(
-  foundryUrl: string,
+  foundryUrl: AuthorizedFoundryUrl,
   viteMode: string | undefined,
 ): Promise<Response> {
-  const url = new URL("api/v2/widgets/devModeSettingsV2/enable", foundryUrl);
+  const url = resolveAuthorizedFoundryUrl(
+    foundryUrl,
+    "api/v2/widgets/devModeSettingsV2/enable",
+  );
   url.searchParams.set("preview", "true");
   return fetch(url, {
     method: "POST",
+    // Redirects would carry the token to a location that was never authorized
+    redirect: "error",
     headers: {
       authorization: `Bearer ${getFoundryToken(viteMode)}`,
       accept: "application/json",
