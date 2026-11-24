@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import { assertValidNpmPackageName } from "../util/assertValidNpmPackageName.js";
 import type { EnhanceCommon } from "./EnhanceCommon.js";
 import { AbstractImportable } from "./EnhancedBase.js";
 
@@ -24,9 +25,13 @@ export class ForeignType extends AbstractImportable {
     shortApiName: string,
     destinationPackage: string,
   ) {
+    const fullApiName = apiNamespace
+      ? `${apiNamespace}.${shortApiName}`
+      : shortApiName;
+    assertValidNpmPackageName(destinationPackage, fullApiName);
     super(
       _common,
-      apiNamespace ? `${apiNamespace}.${shortApiName}` : shortApiName,
+      fullApiName,
       destinationPackage,
       false,
     );
