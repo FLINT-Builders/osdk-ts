@@ -45,12 +45,13 @@ export async function generateWithMockOntology(): Promise<void> {
 
     const generatePackageCommand = new GeneratePackageCommand();
 
+    process.env.FOUNDRY_TOKEN = "myAccessToken";
+
     const baseArgs: Parameters<(typeof generatePackageCommand)["handler"]>[0] =
       {
         packageName: "@test-app2/osdk",
         packageVersion: "0.0.1",
         outputDir: dir,
-        authToken: "myAccessToken",
         foundryHostname: "https://stack.palantir.com",
         ontology:
           "ri.ontology.main.ontology.698267cc-6b48-4d98-beff-29beb24e9361",
