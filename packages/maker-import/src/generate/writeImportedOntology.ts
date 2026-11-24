@@ -41,6 +41,12 @@ const DIR_NAME_MAP: Record<string, string> = {
   [OntologyEntityTypeEnum.SHARED_PROPERTY_TYPE]: "shared-property-types",
 };
 
+const IDENTIFIER = /^[A-Za-z_][A-Za-z0-9_]*$/u;
+
+const ENTITY_TYPE_VALUES: ReadonlySet<string> = new Set(
+  Object.values(OntologyEntityTypeEnum),
+);
+
 interface EntityEntry {
   apiName: string;
   entityType: OntologyEntityTypeEnum;
@@ -133,15 +139,6 @@ export function writeImportedOntology(
 ): void {
   const codegenDir = path.resolve(outputDir, "codegen");
 
-  // Clean and create directories
-  for (const dirName of Object.values(DIR_NAME_MAP)) {
-    const dirPath = path.join(codegenDir, dirName);
-    if (fs.existsSync(dirPath)) {
-      fs.rmSync(dirPath, { recursive: true, force: true });
-    }
-    fs.mkdirSync(dirPath, { recursive: true });
-  }
-
   // Pass 1: Convert all entities
   const entries: EntityEntry[] = [];
   const convertedOntology = convertOntologyFullMetadata(metadata);
@@ -163,6 +160,24 @@ export function writeImportedOntology(
 
   // Pass 2: Resolve unique variable names across all entities
   const varNames = resolveVarNames(entries.map((e) => e.apiName));
+  for (let i = 0; i < varNames.length; i++) {
+    if (!IDENTIFIER.test(varNames[i])) {
+      throw new Error(
+        `Cannot generate a TypeScript identifier for api name ${JSON.stringify(
+          entries[i].apiName,
+        )}`,
+      );
+    }
+  }
+
+  // Clean and create directories
+  for (const dirName of Object.values(DIR_NAME_MAP)) {
+    const dirPath = path.join(codegenDir, dirName);
+    if (fs.existsSync(dirPath)) {
+      fs.rmSync(dirPath, { recursive: true, force: true });
+    }
+    fs.mkdirSync(dirPath, { recursive: true });
+  }
 
   // Pass 3: Write files with resolved names
   const topLevelExports: string[] = [];
@@ -196,7 +211,10 @@ function writeEntityFile(
 
   const entityJSON = JSON.stringify(entity, null, 2).replace(
     /("__type"\s*:\s*)"([^"]*)"/gu,
-    (_, prefix, value) => `${prefix}OntologyEntityTypeEnum.${value}`,
+    (match, prefix, value) =>
+      ENTITY_TYPE_VALUES.has(value)
+        ? `${prefix}OntologyEntityTypeEnum.${value}`
+        : match,
   );
 
   const content = `import { wrapWithProxy, OntologyEntityTypeEnum } from '@osdk/maker';
