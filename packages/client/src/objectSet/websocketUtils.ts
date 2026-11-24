@@ -56,9 +56,19 @@ function constructOntologySubscriptionsWebsocketUrl({
   endpoint,
   ontologyRid,
 }: ConstructOntologySubscriptionsWebsocketUrlArgs): URL {
+  const encodedOntologyRid = encodeURIComponent(ontologyRid);
+  // encodeURIComponent leaves dots intact, so "." and ".." would still be
+  // resolved as dot segments by the URL parser.
+  if (
+    encodedOntologyRid === "" ||
+    encodedOntologyRid === "." ||
+    encodedOntologyRid === ".."
+  ) {
+    throw new Error("Invalid ontology RID");
+  }
   const base = new URL(baseUrl);
   const url = new URL(
-    `api/v2/ontologySubscriptions/ontologies/${ontologyRid}/${endpoint}`,
+    `api/v2/ontologySubscriptions/ontologies/${encodedOntologyRid}/${endpoint}`,
     base,
   );
   url.protocol = url.protocol.replace("https", "wss");
