@@ -9,7 +9,6 @@ export default defineConfig({
   plugins: [react(), foundryWidgetPlugin()],
   server: {
     port: 8080,
-    cors: true,
   },
   build: {
     rollupOptions: {
