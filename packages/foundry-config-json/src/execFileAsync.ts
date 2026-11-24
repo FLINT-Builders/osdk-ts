@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { exec } from "node:child_process";
+import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 
-export const execAsync: typeof exec.__promisify__ = promisify(exec);
+export const execFileAsync: typeof execFile.__promisify__ = promisify(execFile);
