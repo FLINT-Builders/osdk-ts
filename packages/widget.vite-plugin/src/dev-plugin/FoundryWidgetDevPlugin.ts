@@ -34,6 +34,11 @@ import { getInputHtmlEntrypoints } from "../common/getInputHtmlEntrypoints.js";
 import { standardizePathAndFileExtension } from "../common/standardizePathAndFileExtension.js";
 import { buildDevModeManifest } from "./buildDevModeManifest.js";
 import { isCodeWorkspacesMode } from "./codeWorkspacesMode.js";
+import {
+  getAllowedDevServerOrigins,
+  isAllowedOrigin,
+  isCrossOriginRequest,
+} from "./devServerOrigins.js";
 import { extractInjectedScripts } from "./extractInjectedScripts.js";
 import { getBaseHref } from "./getBaseHref.js";
 import { getFoundryToken } from "./getFoundryToken.js";
@@ -57,6 +62,9 @@ export function FoundryWidgetDevPlugin(
   const codeEntrypoints: Record<string, string> = {};
   // Store the map of fully resolved config file paths to entrypoint file paths
   const configFileToEntrypoint: Record<string, string> = {};
+  // Origins allowed to read dev server responses, resolved from foundry.config.json
+  let allowedOrigins: Array<string | RegExp> = [];
+  let replacedWildcardCors = false;
 
   return {
     name: DEV_PLUGIN_ID,
@@ -73,6 +81,21 @@ export function FoundryWidgetDevPlugin(
     },
 
     /**
+     * Only let localhost pages and the Foundry origin read dev server responses. `cors: true` or
+     * a CORS config without an `origin` would let any website read the widget source and
+     * generated SDK, so those are restricted too.
+     */
+    async config(config, { mode }) {
+      allowedOrigins = await getAllowedDevServerOrigins(mode);
+      const cors = config.server?.cors;
+      if (cors === false || (typeof cors === "object" && cors.origin != null)) {
+        return;
+      }
+      replacedWildcardCors = cors != null;
+      return { server: { cors: { origin: [...allowedOrigins] } } };
+    },
+
+    /**
      * Capture the entrypoints from the Vite config so that we can manually load them on our
      * setup page and trigger module parsing.
      */
@@ -86,6 +109,15 @@ export function FoundryWidgetDevPlugin(
     configResolved(resolvedConfig) {
       warnIfWrongDevCommand(resolvedConfig.mode, resolvedConfig.logger);
       getFoundryToken(resolvedConfig.mode);
+      if (replacedWildcardCors) {
+        resolvedConfig.logger.warn(
+          color.yellow(
+            "`server.cors` without an `origin` allows any website to read files from the dev server. " +
+              "Only localhost and your Foundry origin are allowed instead. " +
+              "Remove `cors: true` from your Vite config to silence this warning.",
+          ),
+        );
+      }
     },
 
     /**
@@ -145,6 +177,21 @@ export function FoundryWidgetDevPlugin(
       server.middlewares.use(
         serverPath(server, FINISH_PATH),
         async (req, res) => {
+          // Only the setup page served by this dev server may publish dev mode settings or read
+          // the response. Vite 7 applies its CORS headers before plugin middlewares run.
+          res.removeHeader("Access-Control-Allow-Origin");
+          res.removeHeader("Access-Control-Allow-Credentials");
+          if (isCrossOriginRequest(req)) {
+            server.config.logger.warn(
+              `Rejected a cross-origin request to ${FINISH_PATH} from ${
+                req.headers.origin ?? "an unknown origin"
+              }.`,
+            );
+            res.statusCode = 403;
+            res.end();
+            return;
+          }
+
           // Check for too many attempts
           if (req.url == null) {
             throw new Error("Request URL is undefined");
@@ -198,8 +245,13 @@ export function FoundryWidgetDevPlugin(
        */
       server.middlewares.use(
         serverPath(server, VITE_INJECTIONS_PATH),
-        async (_, res) => {
-          res.setHeader("Access-Control-Allow-Origin", "*");
+        async (req, res) => {
+          // Vite 6 applies its CORS headers after plugin middlewares, so this endpoint sets its own
+          res.setHeader("Vary", "Origin");
+          const origin = req.headers.origin;
+          if (isAllowedOrigin(origin, allowedOrigins)) {
+            res.setHeader("Access-Control-Allow-Origin", origin);
+          }
           res.setHeader("Content-Type", "application/javascript");
           const injectedScripts = await extractInjectedScripts(server);
           res.end(injectedScripts.inlineScripts.join("\n"));
