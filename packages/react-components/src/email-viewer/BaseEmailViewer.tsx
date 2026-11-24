@@ -21,6 +21,11 @@ import type { BaseEmailViewerProps, EmailAddress } from "./EmailViewerApi.js";
 
 import styles from "./BaseEmailViewer.module.css";
 
+// `credentialless` is not in React's iframe typings. Browsers that support it
+// load the email's images, stylesheets, and frames without any cookies,
+// including SameSite=None ones.
+const CREDENTIALLESS_IFRAME_ATTRIBUTES = { credentialless: "" };
+
 function formatAddress(address: EmailAddress): string {
   if (address.name) {
     return `${address.name} <${address.address}>`;
@@ -47,19 +52,19 @@ export function BaseEmailViewer({
       return (
         <div className={styles.bodyContainer}>
           {/*
-           * Security: allow-same-origin is needed so CSS within the email HTML
-           * resolves correctly. Scripts are blocked because allow-scripts is NOT
-           * set. Never add allow-scripts here — the combination of
-           * allow-same-origin + allow-scripts bypasses the sandbox entirely.
-           *
-           * Known limitation: because the iframe shares the parent origin,
-           * email CSS can make outbound requests via url() (e.g. tracking
-           * pixels in background-image) and can read CSS custom properties.
-           * This is acceptable for an experimental component.
+           * Security: the email HTML is untrusted. The empty sandbox applies
+           * every restriction: no scripts, forms, popups, or top-level
+           * navigation, and the document gets an opaque origin. Never add
+           * allow-same-origin: it would let the email's resource loads
+           * (images, stylesheets, meta refresh) run as the embedding app and
+           * carry its cookies. Inline and <style> CSS does not depend on the
+           * origin and renders the same.
            */}
           <iframe
+            {...CREDENTIALLESS_IFRAME_ATTRIBUTES}
             className={styles.bodyIframe}
-            sandbox="allow-same-origin"
+            sandbox=""
+            referrerPolicy="no-referrer"
             srcDoc={resolved.html}
             title="Email body"
           />

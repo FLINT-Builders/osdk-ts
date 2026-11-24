@@ -13,6 +13,7 @@ cimg
 codegen
 commitish
 Cpath
+credentialless
 Csvg
 dedups
 devx

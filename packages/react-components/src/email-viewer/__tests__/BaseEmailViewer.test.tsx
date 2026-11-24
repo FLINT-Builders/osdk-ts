@@ -53,7 +53,9 @@ describe("BaseEmailViewer", () => {
       />,
     );
     const iframe = screen.getByTitle("Email body");
-    expect(iframe.getAttribute("sandbox")).toBe("allow-same-origin");
+    expect(iframe.getAttribute("sandbox")).toBe("");
+    expect(iframe.getAttribute("referrerpolicy")).toBe("no-referrer");
+    expect(iframe.hasAttribute("credentialless")).toBe(true);
     expect(iframe.getAttribute("srcdoc")).toBe("<p>Hello Bob!</p>");
   });
 
