@@ -21,6 +21,12 @@ export interface SheetData {
   name: string;
   /** Rows of cell values as strings */
   rows: readonly (readonly string[])[];
+  /**
+   * Whether rows or columns of the original sheet were left out because the
+   * sheet exceeds the viewer's size limits.
+   * @default undefined
+   */
+  truncated?: boolean;
 }
 
 export interface ParsedSpreadsheet {
