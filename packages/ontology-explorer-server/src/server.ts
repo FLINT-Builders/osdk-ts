@@ -22,9 +22,29 @@ import express from "express";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+const LOOPBACK_HOSTNAMES = new Set(["localhost", "127.0.0.1", "[::1]"]);
+
+// Rejecting non-loopback Host headers stops DNS rebinding pages from reading
+// the ontology through the developer's browser.
+function isLoopbackHost(host: string | undefined): boolean {
+  if (host == null) {
+    return false;
+  }
+  const hostname = host.replace(/:\d+$/u, "").toLowerCase();
+  return LOOPBACK_HOSTNAMES.has(hostname);
+}
+
 export function createServer(filePath: string): express.Express {
   const app = express();
   const resolvedPath = path.resolve(filePath);
+
+  app.use((req, res, next) => {
+    if (!isLoopbackHost(req.headers.host)) {
+      res.status(403).type("text/plain").send("Forbidden");
+      return;
+    }
+    next();
+  });
 
   // TODO: load once and have a file watcher to automatically resend new data when the file changes
   app.get("/api/ontology", (_req, res) => {
