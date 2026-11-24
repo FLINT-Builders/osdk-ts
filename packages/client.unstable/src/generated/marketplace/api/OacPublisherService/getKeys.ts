@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../encodePathSegment.js";
 import type {
   GetKeysResponse as _api_GetKeysResponse,
   MarketplaceRid as _api_MarketplaceRid,
@@ -28,5 +29,9 @@ export async function getKeys(
   ctx: ConjureContext,
   marketplaceRid: _api_MarketplaceRid,
 ): Promise<_api_GetKeysResponse> {
-  return conjureFetch(ctx, `/oac-publisher/${marketplaceRid}/oac-keys`, "GET");
+  return conjureFetch(
+    ctx,
+    `/oac-publisher/${encodePathSegment(marketplaceRid)}/oac-keys`,
+    "GET",
+  );
 }

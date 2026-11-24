@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../encodePathSegment.js";
 import type {
   ModuleGroupName as _ModuleGroupName,
   SparkModuleGroupCreationOrUpdateRequest as _SparkModuleGroupCreationOrUpdateRequest,
@@ -36,7 +37,7 @@ export async function createOrUpdateSparkModuleGroupDeprecated(
 ): Promise<void> {
   return conjureFetch(
     ctx,
-    `/module-group/${moduleGroupName}`,
+    `/module-group/${encodePathSegment(moduleGroupName)}`,
     "POST",
     moduleGroupCreationOrUpdateRequest,
   );

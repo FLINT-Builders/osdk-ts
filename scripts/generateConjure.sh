@@ -29,6 +29,7 @@ function generateConjure() {
     "$SCRIPT_DIR/getConjureIr.sh" "$GROUP_ID" "$ARTIFACT_ID"
     echo "  - Generating typescript"
     $CONJURE_LITE generate --ir "${SCRIPT_DIR}/../tmp/${ARTIFACT_ID}.conjure.json" --outDir "$OUT_DIR" --header "/**/"
+    node "$SCRIPT_DIR/encodeConjurePathParams.mjs" "$OUT_DIR" "${PACKAGE_PATH}/src/encodePathSegment.ts"
 
     formatTypescript "$OUT_DIR" "$PACKAGE_PATH"
 }

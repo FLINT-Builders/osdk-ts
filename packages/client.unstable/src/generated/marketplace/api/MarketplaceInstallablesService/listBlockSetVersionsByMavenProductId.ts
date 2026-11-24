@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../encodePathSegment.js";
 import type {
   ListInstallableBlockSetVersionsByMavenProductIdResponse as _api_ListInstallableBlockSetVersionsByMavenProductIdResponse,
   ListInstallableBlockSetVersionsRequest as _api_ListInstallableBlockSetVersionsRequest,
@@ -35,7 +36,7 @@ export async function listBlockSetVersionsByMavenProductId(
 ): Promise<_api_ListInstallableBlockSetVersionsByMavenProductIdResponse> {
   return conjureFetch(
     ctx,
-    `/installation-app-service/${marketplaceRid}/mavenProductId/${mavenProductId}/blockSetVersions`,
+    `/installation-app-service/${encodePathSegment(marketplaceRid)}/mavenProductId/${encodePathSegment(mavenProductId)}/blockSetVersions`,
     "POST",
     request,
     { limit },

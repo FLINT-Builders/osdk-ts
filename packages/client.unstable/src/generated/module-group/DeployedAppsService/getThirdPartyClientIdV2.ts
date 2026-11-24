@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../encodePathSegment.js";
 import type { ComputeModuleThirdParty as _ComputeModuleThirdParty } from "../__components.js";
 export async function getThirdPartyClientIdV2(
   ctx: ConjureContext,
@@ -23,7 +24,7 @@ export async function getThirdPartyClientIdV2(
 ): Promise<_ComputeModuleThirdParty | null | undefined> {
   return conjureFetch(
     ctx,
-    `/deployed-apps/${deployedAppRid}/client-id/v2`,
+    `/deployed-apps/${encodePathSegment(deployedAppRid)}/client-id/v2`,
     "GET",
   );
 }

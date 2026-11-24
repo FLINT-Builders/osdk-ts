@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../encodePathSegment.js";
 import type {
   BlockSetVersionId as _api_BlockSetVersionId,
   FinalizeBlockSetVersionRequest as _api_FinalizeBlockSetVersionRequest,
@@ -52,7 +53,7 @@ export async function finalizeBlockSetVersionV2(
 ): Promise<_api_FinalizeBlockSetVersionResponse> {
   return conjureFetch(
     ctx,
-    `/block-sets/v2/pending/version/${blockSetVersionId}/finalize`,
+    `/block-sets/v2/pending/version/${encodePathSegment(blockSetVersionId)}/finalize`,
     "POST",
     request,
   );

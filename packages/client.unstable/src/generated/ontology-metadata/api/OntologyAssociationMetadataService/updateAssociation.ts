@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../encodePathSegment.js";
 import type { OntologyRid as _api_OntologyRid } from "../__components.js";
 import type {
   UpdateAssociationRequest as _api_association_metadata_UpdateAssociationRequest,
@@ -32,7 +33,7 @@ export async function updateAssociation(
 ): Promise<_api_association_metadata_UpdateAssociationResponse> {
   return conjureFetch(
     ctx,
-    `/association/ontology/${ontologyRid}/updateOntologyEntityAssociation`,
+    `/association/ontology/${encodePathSegment(ontologyRid)}/updateOntologyEntityAssociation`,
     "PUT",
     request,
   );

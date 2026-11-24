@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../encodePathSegment.js";
 import type {
   BlockSetVersionId as _api_BlockSetVersionId,
   MarketplaceRid as _api_MarketplaceRid,
@@ -47,7 +48,7 @@ export async function resolvePresets(
 ): Promise<_api_ResolvePresetsResponse> {
   return conjureFetch(
     ctx,
-    `/installation-app-service/installable/v2/${marketplaceRid}/blockSet/version/${blockSetVersionId}/resolve-presets`,
+    `/installation-app-service/installable/v2/${encodePathSegment(marketplaceRid)}/blockSet/version/${encodePathSegment(blockSetVersionId)}/resolve-presets`,
     "POST",
     request,
   );

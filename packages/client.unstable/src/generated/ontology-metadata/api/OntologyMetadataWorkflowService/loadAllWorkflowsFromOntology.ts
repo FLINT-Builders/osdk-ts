@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../encodePathSegment.js";
 import type {
   LoadAllWorkflowsPageRequest as _workflow_api_LoadAllWorkflowsPageRequest,
   LoadAllWorkflowsPageResponse as _workflow_api_LoadAllWorkflowsPageResponse,
@@ -40,7 +41,7 @@ export async function loadAllWorkflowsFromOntology(
 ): Promise<_workflow_api_LoadAllWorkflowsPageResponse> {
   return conjureFetch(
     ctx,
-    `/workflow/ontology/load/${ontologyRid}/${ontologyVersion}/loadAllWorkflowsFromOntology`,
+    `/workflow/ontology/load/${encodePathSegment(ontologyRid)}/${encodePathSegment(ontologyVersion)}/loadAllWorkflowsFromOntology`,
     "POST",
     request,
   );

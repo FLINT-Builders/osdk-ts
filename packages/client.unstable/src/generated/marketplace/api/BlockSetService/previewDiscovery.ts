@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../encodePathSegment.js";
 import type {
   BlockSetVersionId as _api_BlockSetVersionId,
   PreviewDiscoveryRequest as _api_PreviewDiscoveryRequest,
@@ -39,7 +40,7 @@ export async function previewDiscovery(
 ): Promise<_api_PreviewDiscoveryResponse> {
   return conjureFetch(
     ctx,
-    `/block-sets/version/${blockSetVersionId}/preview-discovery`,
+    `/block-sets/version/${encodePathSegment(blockSetVersionId)}/preview-discovery`,
     "POST",
     request,
   );

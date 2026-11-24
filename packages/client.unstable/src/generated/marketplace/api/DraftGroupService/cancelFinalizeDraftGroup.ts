@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../encodePathSegment.js";
 import type {
   CancelFinalizeDraftGroupRequest as _api_CancelFinalizeDraftGroupRequest,
   CancelFinalizeDraftGroupResponse as _api_CancelFinalizeDraftGroupResponse,
@@ -42,7 +43,7 @@ export async function cancelFinalizeDraftGroup(
 ): Promise<_api_CancelFinalizeDraftGroupResponse> {
   return conjureFetch(
     ctx,
-    `/draft-groups/${draftGroupRid}/finalize/cancel`,
+    `/draft-groups/${encodePathSegment(draftGroupRid)}/finalize/cancel`,
     "POST",
     request,
   );

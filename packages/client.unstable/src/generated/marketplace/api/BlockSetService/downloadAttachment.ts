@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../encodePathSegment.js";
 import type {
   AttachmentId as _api_AttachmentId,
   BlockSetVersionId as _api_BlockSetVersionId,
@@ -40,7 +41,7 @@ export async function downloadAttachment(
 ): Promise<string> {
   return conjureFetch(
     ctx,
-    `/block-sets/${marketplaceRid}/version/${blockSetVersionId}/attachments/${attachmentId}`,
+    `/block-sets/${encodePathSegment(marketplaceRid)}/version/${encodePathSegment(blockSetVersionId)}/attachments/${encodePathSegment(attachmentId)}`,
     "GET",
     undefined,
     undefined,

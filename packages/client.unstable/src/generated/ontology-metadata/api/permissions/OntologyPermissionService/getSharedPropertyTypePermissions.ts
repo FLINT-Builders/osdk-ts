@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../../encodePathSegment.js";
 import type { SharedPropertyTypeRid as _api_SharedPropertyTypeRid } from "../../__components.js";
 import type { GetSharedPropertyTypePermissionsResponse as _api_permissions_GetSharedPropertyTypePermissionsResponse } from "../__components.js";
 
@@ -28,7 +29,7 @@ export async function getSharedPropertyTypePermissions(
 ): Promise<_api_permissions_GetSharedPropertyTypePermissionsResponse> {
   return conjureFetch(
     ctx,
-    `/permissions/sharedPropertyType/${sharedPropertyTypeRid}`,
+    `/permissions/sharedPropertyType/${encodePathSegment(sharedPropertyTypeRid)}`,
     "GET",
   );
 }

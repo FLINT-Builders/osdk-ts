@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../encodePathSegment.js";
 import type {
   LoadAllInterfaceTypesPageRequest as _api_LoadAllInterfaceTypesPageRequest,
   LoadAllInterfaceTypesPageResponse as _api_LoadAllInterfaceTypesPageResponse,
@@ -35,7 +36,7 @@ export async function loadAllInterfaceTypesFromOntology(
 ): Promise<_api_LoadAllInterfaceTypesPageResponse> {
   return conjureFetch(
     ctx,
-    `/ontology/ontology/load/${ontologyRid}/${ontologyVersion}/loadAllInterfaceTypes`,
+    `/ontology/ontology/load/${encodePathSegment(ontologyRid)}/${encodePathSegment(ontologyVersion)}/loadAllInterfaceTypes`,
     "PUT",
     request,
   );

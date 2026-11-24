@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../../encodePathSegment.js";
 import type { OntologyBranchRid as _api_OntologyBranchRid } from "../../../api/__components.js";
 import type {
   MergeOntologyBranchDryRunRequest as _branch_api_MergeOntologyBranchDryRunRequest,
@@ -35,7 +36,7 @@ export async function dryRunMergeOntologyBranch(
 ): Promise<_branch_api_MergeOntologyBranchDryRunResponse> {
   return conjureFetch(
     ctx,
-    `/ontology/branch/${ontologyBranchRid}/merge/dry-run`,
+    `/ontology/branch/${encodePathSegment(ontologyBranchRid)}/merge/dry-run`,
     "POST",
     request,
   );

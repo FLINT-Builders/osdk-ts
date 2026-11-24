@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../encodePathSegment.js";
 import type {
   BlockSetVersionId as _api_BlockSetVersionId,
   Filename as _api_Filename,
@@ -53,7 +54,7 @@ export async function uploadAttachment(
 ): Promise<_api_UploadAttachmentResponse> {
   return conjureFetch(
     ctx,
-    `/block-sets/${marketplaceRid}/version/${blockSetVersionId}/attachments`,
+    `/block-sets/${encodePathSegment(marketplaceRid)}/version/${encodePathSegment(blockSetVersionId)}/attachments`,
     "POST",
     content,
     { filename, mimeType, isThumbnail },

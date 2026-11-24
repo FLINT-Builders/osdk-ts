@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../../encodePathSegment.js";
 import type { MonitorRid as _api_MonitorRid } from "../../__components.js";
 import type {
   ValidateMonitorResponse as _api_validation_ValidateMonitorResponse,
@@ -34,7 +35,7 @@ export async function validateMonitorUpdate(
 ): Promise<_api_validation_ValidateMonitorResponse> {
   return conjureFetch(
     ctx,
-    `/validation/v0/${monitorRid}/validate-update`,
+    `/validation/v0/${encodePathSegment(monitorRid)}/validate-update`,
     "PUT",
     request,
   );

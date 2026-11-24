@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../encodePathSegment.js";
 import type {
   ComputeModuleSchemaType as _ComputeModuleSchemaType,
   QueryRunnerSchema as _QueryRunnerSchema,
@@ -32,7 +33,7 @@ export async function getDeployedAppFunctionSchemas(
 ): Promise<Array<_QueryRunnerSchema>> {
   return conjureFetch(
     ctx,
-    `/deployed-apps/${deployedAppRid}/${branch}/function-schemas`,
+    `/deployed-apps/${encodePathSegment(deployedAppRid)}/${encodePathSegment(branch)}/function-schemas`,
     "GET",
     undefined,
     { schemaType },

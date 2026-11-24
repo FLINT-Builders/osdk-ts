@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../encodePathSegment.js";
 import type { ApplicationRid } from "../ApplicationRid.js";
 import type { UpdateApplicationRequestV3 } from "../UpdateApplicationRequestV3.js";
 import type { VersionedApplication } from "../VersionedApplication.js";
@@ -32,7 +33,7 @@ export async function updateApplicationV3(
 ): Promise<VersionedApplication> {
   return conjureFetch(
     ctx,
-    `/applications/v3/${applicationRid}`,
+    `/applications/v3/${encodePathSegment(applicationRid)}`,
     "PUT",
     request,
   );

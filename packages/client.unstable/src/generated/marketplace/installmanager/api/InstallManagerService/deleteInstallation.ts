@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../../encodePathSegment.js";
 import type {
   ManagedInstallationName as _api_ManagedInstallationName,
   NamespaceRid as _api_NamespaceRid,
@@ -38,7 +39,7 @@ export async function deleteInstallation(
 ): Promise<_installmanager_api_DeleteInstallationResponse> {
   return conjureFetch(
     ctx,
-    `/install-manager/namespaces/${namespaceRid}/installations/${installationName}`,
+    `/install-manager/namespaces/${encodePathSegment(namespaceRid)}/installations/${encodePathSegment(installationName)}`,
     "DELETE",
     request,
   );

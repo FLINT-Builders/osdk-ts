@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../../encodePathSegment.js";
 import type { NamespaceRid as _api_NamespaceRid } from "../../../api/__components.js";
 import type { ReleaseManagementNamespaceSettings as _installmanager_api_ReleaseManagementNamespaceSettings } from "../__components.js";
 
@@ -36,7 +37,7 @@ export async function putNamespaceReleaseManagementSettings(
 ): Promise<void> {
   return conjureFetch(
     ctx,
-    `/install-manager/namespaces/${namespaceRid}/release-management-settings`,
+    `/install-manager/namespaces/${encodePathSegment(namespaceRid)}/release-management-settings`,
     "PUT",
     settings,
   );

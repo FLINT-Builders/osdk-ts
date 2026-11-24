@@ -16,6 +16,8 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../encodePathSegment.js";
+
 /**
  * Note: experimental and subject to change at any time
  * Registers the server endpoints for a compute module from a given OpenAPI specification.
@@ -28,7 +30,7 @@ export async function registerApiSpec(
 ): Promise<void> {
   return conjureFetch(
     ctx,
-    `/deployed-apps/${deployedAppRid}/${branch}/api-spec`,
+    `/deployed-apps/${encodePathSegment(deployedAppRid)}/${encodePathSegment(branch)}/api-spec`,
     "PUT",
     specContent,
     undefined,

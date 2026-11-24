@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../../encodePathSegment.js";
 import type { ApolloEntityId as _api_ApolloEntityId } from "../../../api/__components.js";
 import type { ManagedInstallation as _installmanager_api_ManagedInstallation } from "../__components.js";
 
@@ -30,7 +31,7 @@ export async function getInstallationForApolloEntityId(
 ): Promise<_installmanager_api_ManagedInstallation> {
   return conjureFetch(
     ctx,
-    `/install-manager/installations/entity-id/${apolloEntityId}`,
+    `/install-manager/installations/entity-id/${encodePathSegment(apolloEntityId)}`,
     "GET",
   );
 }

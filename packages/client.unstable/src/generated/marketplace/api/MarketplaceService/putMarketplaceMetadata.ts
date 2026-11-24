@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../encodePathSegment.js";
 import type {
   MarketplaceRid as _api_MarketplaceRid,
   PutMarketplaceMetadataRequest as _api_PutMarketplaceMetadataRequest,
@@ -33,7 +34,7 @@ export async function putMarketplaceMetadata(
 ): Promise<_api_VersionedMarketplaceMetadata> {
   return conjureFetch(
     ctx,
-    `/marketplaces/${marketplaceRid}/metadata`,
+    `/marketplaces/${encodePathSegment(marketplaceRid)}/metadata`,
     "PUT",
     request,
   );

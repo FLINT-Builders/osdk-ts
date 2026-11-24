@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../../encodePathSegment.js";
 import type { MonitorRid as _api_MonitorRid } from "../../__components.js";
 import type {
   UpdateMonitorRequest as _api_registry_UpdateMonitorRequest,
@@ -38,7 +39,7 @@ export async function updateMonitor(
 ): Promise<_api_registry_UpdateMonitorResponse> {
   return conjureFetch(
     ctx,
-    `/registry/v0/monitors/${monitorRid}`,
+    `/registry/v0/monitors/${encodePathSegment(monitorRid)}`,
     "POST",
     request,
   );

@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../../encodePathSegment.js";
 import type { OntologyRid as _api_OntologyRid } from "../../__components.js";
 import type {
   OntologyDeleteRequest as _api_modification_OntologyDeleteRequest,
@@ -33,7 +34,7 @@ export async function deleteOntology(
 ): Promise<_api_modification_OntologyDeleteResponse> {
   return conjureFetch(
     ctx,
-    `/ontology/v2/delete/${ontologyRid}`,
+    `/ontology/v2/delete/${encodePathSegment(ontologyRid)}`,
     "POST",
     request,
   );

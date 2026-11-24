@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../encodePathSegment.js";
 import type {
   CreateBlockSetVersionRequest as _api_CreateBlockSetVersionRequest,
   CreateBlockSetVersionResponse as _api_CreateBlockSetVersionResponse,
@@ -38,7 +39,7 @@ export async function createBlockSetVersionV2(
 ): Promise<_api_CreateBlockSetVersionResponse> {
   return conjureFetch(
     ctx,
-    `/block-sets/v2/${marketplaceRid}/version`,
+    `/block-sets/v2/${encodePathSegment(marketplaceRid)}/version`,
     "POST",
     request,
   );

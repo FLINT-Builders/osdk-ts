@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../encodePathSegment.js";
 import type {
   BatchGetBlockInstallationsRequest as _api_BatchGetBlockInstallationsRequest,
   BatchGetBlockInstallationsResponse as _api_BatchGetBlockInstallationsResponse,
@@ -46,7 +47,7 @@ export async function batchGetBlockInstallations(
 ): Promise<_api_BatchGetBlockInstallationsResponse> {
   return conjureFetch(
     ctx,
-    `/block-installation/v2/block-set-installations/${blockSetInstallationRid}/block-installations/batch-get`,
+    `/block-installation/v2/block-set-installations/${encodePathSegment(blockSetInstallationRid)}/block-installations/batch-get`,
     "POST",
     request,
   );

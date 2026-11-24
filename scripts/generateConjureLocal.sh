@@ -27,6 +27,7 @@ function generateConjure() {
 
     echo "  - Generating typescript"
     $CONJURE_LITE generate --ir "$CONJURE_PATH" --outDir "$OUT_DIR" --header "/**/"
+    node "$SCRIPT_DIR/encodeConjurePathParams.mjs" "$OUT_DIR" "${PACKAGE_PATH}/src/encodePathSegment.ts"
 
     formatTypescript "$OUT_DIR" "$PACKAGE_PATH"
 }

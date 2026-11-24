@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../encodePathSegment.js";
 import type {
   GetProductVersionMetadataResponse as _api_GetProductVersionMetadataResponse,
   MarketplaceRid as _api_MarketplaceRid,
@@ -46,7 +47,7 @@ export async function getProductVersionMetadataByMavenProductId(
 ): Promise<_api_GetProductVersionMetadataResponse> {
   return conjureFetch(
     ctx,
-    `/installation-app-service/installable/${marketplaceRid}/mavenProductId/${mavenProductId}/version/${version}/productMetadata`,
+    `/installation-app-service/installable/${encodePathSegment(marketplaceRid)}/mavenProductId/${encodePathSegment(mavenProductId)}/version/${encodePathSegment(version)}/productMetadata`,
     "GET",
   );
 }

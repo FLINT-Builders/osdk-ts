@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../encodePathSegment.js";
 import type {
   BlockSetVersionId as _api_BlockSetVersionId,
   BlockSetVersionStatusResponse as _api_BlockSetVersionStatusResponse,
@@ -33,7 +34,7 @@ export async function getBlockSetVersionStatusV2(
 ): Promise<_api_BlockSetVersionStatusResponse> {
   return conjureFetch(
     ctx,
-    `/block-sets/v2/version/${blockSetVersionId}/status`,
+    `/block-sets/v2/version/${encodePathSegment(blockSetVersionId)}/status`,
     "GET",
   );
 }

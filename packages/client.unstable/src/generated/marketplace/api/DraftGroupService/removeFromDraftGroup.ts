@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../encodePathSegment.js";
 import type {
   DraftGroup as _api_DraftGroup,
   DraftGroupRid as _api_DraftGroupRid,
@@ -36,7 +37,7 @@ export async function removeFromDraftGroup(
 ): Promise<_api_DraftGroup> {
   return conjureFetch(
     ctx,
-    `/draft-groups/${draftGroupRid}/remove-versions`,
+    `/draft-groups/${encodePathSegment(draftGroupRid)}/remove-versions`,
     "POST",
     request,
   );

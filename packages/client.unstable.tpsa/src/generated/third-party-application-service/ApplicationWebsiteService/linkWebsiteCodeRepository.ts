@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../encodePathSegment.js";
 import type { ApplicationRid } from "../ApplicationRid.js";
 import type { LinkWebsiteCodeRepositoryRequest } from "../LinkWebsiteCodeRepositoryRequest.js";
 
@@ -39,7 +40,7 @@ export async function linkWebsiteCodeRepository(
 ): Promise<void> {
   return conjureFetch(
     ctx,
-    `/application-websites/${applicationRid}/link`,
+    `/application-websites/${encodePathSegment(applicationRid)}/link`,
     "PUT",
     request,
   );

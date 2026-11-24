@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../encodePathSegment.js";
 import type {
   BatchUpdatePendingInputShapeMetadataRequest as _api_BatchUpdatePendingInputShapeMetadataRequest,
   BatchUpdatePendingInputShapeMetadataResponse as _api_BatchUpdatePendingInputShapeMetadataResponse,
@@ -39,7 +40,7 @@ export async function batchUpdatePendingInputShapeMetadata(
 ): Promise<_api_BatchUpdatePendingInputShapeMetadataResponse> {
   return conjureFetch(
     ctx,
-    `/block-sets/pending/version/${blockSetVersionId}/input/metadata/batchUpdate`,
+    `/block-sets/pending/version/${encodePathSegment(blockSetVersionId)}/input/metadata/batchUpdate`,
     "PUT",
     request,
   );

@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../../encodePathSegment.js";
 import type {
   BranchRid as _api_BranchRid,
   MonitorRid as _api_MonitorRid,
@@ -39,7 +40,7 @@ export async function getGloballyScopedMonitorEvents(
 ): Promise<_api_registry_GetGloballyScopedMonitorEventsResponse> {
   return conjureFetch(
     ctx,
-    `/registry/v0/monitors/${monitorRid}/globally-scoped-events`,
+    `/registry/v0/monitors/${encodePathSegment(monitorRid)}/globally-scoped-events`,
     "GET",
     undefined,
     { pageToken, branchRid },

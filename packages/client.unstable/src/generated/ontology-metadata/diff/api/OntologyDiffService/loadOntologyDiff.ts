@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../../encodePathSegment.js";
 import type { OntologyRid as _api_OntologyRid } from "../../../api/__components.js";
 import type {
   LoadOntologyDiffRequest as _diff_api_LoadOntologyDiffRequest,
@@ -33,7 +34,7 @@ export async function loadOntologyDiff(
 ): Promise<_diff_api_LoadOntologyDiffResponse> {
   return conjureFetch(
     ctx,
-    `/ontology/diff/load/ontologyDiff/${ontologyRid}`,
+    `/ontology/diff/load/ontologyDiff/${encodePathSegment(ontologyRid)}`,
     "POST",
     request,
   );

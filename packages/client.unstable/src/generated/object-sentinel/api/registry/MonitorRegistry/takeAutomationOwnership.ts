@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../../encodePathSegment.js";
 import type {
   BranchRid as _api_BranchRid,
   MonitorRid as _api_MonitorRid,
@@ -31,7 +32,7 @@ export async function takeAutomationOwnership(
 ): Promise<void> {
   return conjureFetch(
     ctx,
-    `/registry/v0/take-ownership/${monitorRid}`,
+    `/registry/v0/take-ownership/${encodePathSegment(monitorRid)}`,
     "POST",
     undefined,
     { branchRid },

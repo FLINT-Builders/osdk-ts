@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../../encodePathSegment.js";
 import type { LinkTypeRid as _api_LinkTypeRid } from "../../__components.js";
 import type { GetLinkTypePermissionsResponse as _api_permissions_GetLinkTypePermissionsResponse } from "../__components.js";
 
@@ -26,5 +27,9 @@ export async function getLinkTypePermissions(
   ctx: ConjureContext,
   linkTypeRid: _api_LinkTypeRid,
 ): Promise<_api_permissions_GetLinkTypePermissionsResponse> {
-  return conjureFetch(ctx, `/permissions/linkType/${linkTypeRid}`, "GET");
+  return conjureFetch(
+    ctx,
+    `/permissions/linkType/${encodePathSegment(linkTypeRid)}`,
+    "GET",
+  );
 }

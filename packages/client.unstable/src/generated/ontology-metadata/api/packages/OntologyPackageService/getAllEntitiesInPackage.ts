@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../../encodePathSegment.js";
 import type {
   OntologyPackageRid as _api_OntologyPackageRid,
   PackagedEntityRid as _api_PackagedEntityRid,
@@ -28,5 +29,9 @@ export async function getAllEntitiesInPackage(
   ctx: ConjureContext,
   packageRid: _api_OntologyPackageRid,
 ): Promise<Array<_api_PackagedEntityRid>> {
-  return conjureFetch(ctx, `/ontology/packages/${packageRid}/entities`, "GET");
+  return conjureFetch(
+    ctx,
+    `/ontology/packages/${encodePathSegment(packageRid)}/entities`,
+    "GET",
+  );
 }

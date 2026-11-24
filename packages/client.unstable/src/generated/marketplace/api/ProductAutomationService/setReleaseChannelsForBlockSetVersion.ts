@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../encodePathSegment.js";
 import type {
   BlockSetId as _api_BlockSetId,
   BlockSetVersionId as _api_BlockSetVersionId,
@@ -36,7 +37,7 @@ export async function setReleaseChannelsForBlockSetVersion(
 ): Promise<void> {
   return conjureFetch(
     ctx,
-    `/automation/product/${marketplaceRid}/${blockSetId}/release/channels/${blockSetVersionId}`,
+    `/automation/product/${encodePathSegment(marketplaceRid)}/${encodePathSegment(blockSetId)}/release/channels/${encodePathSegment(blockSetVersionId)}`,
     "POST",
     request,
   );

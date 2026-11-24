@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../encodePathSegment.js";
 import type {
   CompassProjectRid as _api_CompassProjectRid,
   ProjectMutabilityCapabilities as _api_ProjectMutabilityCapabilities,
@@ -35,7 +36,7 @@ export async function getProjectMutabilityCapabilities(
 ): Promise<_api_ProjectMutabilityCapabilities> {
   return conjureFetch(
     ctx,
-    `/block-installation/v2/projects/${projectRid}/mutability-capabilities`,
+    `/block-installation/v2/projects/${encodePathSegment(projectRid)}/mutability-capabilities`,
     "GET",
   );
 }

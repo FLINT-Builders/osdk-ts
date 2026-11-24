@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../encodePathSegment.js";
 import type {
   BlockSetVersionId as _api_BlockSetVersionId,
   GetDownstreamRecommendationsResponse as _api_GetDownstreamRecommendationsResponse,
@@ -43,7 +44,7 @@ export async function getDownstreamRecommendations(
 ): Promise<_api_GetDownstreamRecommendationsResponse> {
   return conjureFetch(
     ctx,
-    `/recommendations-v2/downstream/${marketplaceRid}/${blockSetVersionId}`,
+    `/recommendations-v2/downstream/${encodePathSegment(marketplaceRid)}/${encodePathSegment(blockSetVersionId)}`,
     "GET",
   );
 }

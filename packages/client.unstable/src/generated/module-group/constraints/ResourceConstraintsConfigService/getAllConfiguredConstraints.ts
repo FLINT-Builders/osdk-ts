@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../encodePathSegment.js";
 import type {
   CompassRid as _constraints_CompassRid,
   ConfiguredResourceConstraintsPage as _constraints_ConfiguredResourceConstraintsPage,
@@ -32,7 +33,7 @@ export async function getAllConfiguredConstraints(
 ): Promise<_constraints_ConfiguredResourceConstraintsPage> {
   return conjureFetch(
     ctx,
-    `/resource-constraints/${moduleGroupProducer}`,
+    `/resource-constraints/${encodePathSegment(moduleGroupProducer)}`,
     "GET",
     undefined,
     { pageToken },

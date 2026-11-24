@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../encodePathSegment.js";
 import type {
   OntologyRid as _api_OntologyRid,
   OrganizationRidsForOntologyResponse as _api_OrganizationRidsForOntologyResponse,
@@ -31,7 +32,7 @@ export async function getOrganizationRidsForOntology(
 ): Promise<_api_OrganizationRidsForOntologyResponse> {
   return conjureFetch(
     ctx,
-    `/ontology/ontology/${ontologyRid}/organizationRids`,
+    `/ontology/ontology/${encodePathSegment(ontologyRid)}/organizationRids`,
     "GET",
   );
 }

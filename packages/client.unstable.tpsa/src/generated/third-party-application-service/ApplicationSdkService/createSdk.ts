@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../encodePathSegment.js";
 import type { ApplicationRid } from "../ApplicationRid.js";
 import type { ApplicationSdk } from "../ApplicationSdk.js";
 import type { CreateApplicationSdkRequest } from "../CreateApplicationSdkRequest.js";
@@ -32,7 +33,7 @@ export async function createSdk(
 ): Promise<ApplicationSdk> {
   return conjureFetch(
     ctx,
-    `/application-sdks/${applicationRid}`,
+    `/application-sdks/${encodePathSegment(applicationRid)}`,
     "POST",
     request,
   );

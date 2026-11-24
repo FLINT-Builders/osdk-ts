@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../encodePathSegment.js";
 import type {
   JobId as _JobId,
   JobStatus as _JobStatus,
@@ -32,7 +33,7 @@ export async function getJobStatus(
 ): Promise<_JobStatus> {
   return conjureFetch(
     ctx,
-    `/module-group-multiplexer/jobs/${jobId}/status`,
+    `/module-group-multiplexer/jobs/${encodePathSegment(jobId)}/status`,
     "GET",
   );
 }

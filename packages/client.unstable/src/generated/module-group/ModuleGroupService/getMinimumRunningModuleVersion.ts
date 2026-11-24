@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../encodePathSegment.js";
 import type {
   ModuleGroupName as _ModuleGroupName,
   SlsVersion as _SlsVersion,
@@ -31,5 +32,9 @@ export async function getMinimumRunningModuleVersion(
   ctx: ConjureContext,
   moduleGroupName: _ModuleGroupName,
 ): Promise<_SlsVersion | null | undefined> {
-  return conjureFetch(ctx, `/module-group/versions/${moduleGroupName}`, "GET");
+  return conjureFetch(
+    ctx,
+    `/module-group/versions/${encodePathSegment(moduleGroupName)}`,
+    "GET",
+  );
 }

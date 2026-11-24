@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../encodePathSegment.js";
 import type {
   GetProductGroupVersionResponse as _api_GetProductGroupVersionResponse,
   ProductGroupRid as _api_ProductGroupRid,
@@ -38,7 +39,7 @@ export async function getProductGroupVersion(
 ): Promise<_api_GetProductGroupVersionResponse> {
   return conjureFetch(
     ctx,
-    `/product-groups/${productGroupRid}/version/${productGroupVersionRid}`,
+    `/product-groups/${encodePathSegment(productGroupRid)}/version/${encodePathSegment(productGroupVersionRid)}`,
     "GET",
   );
 }

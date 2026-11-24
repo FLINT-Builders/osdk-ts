@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../encodePathSegment.js";
 import type {
   BlockId as _api_BlockId,
   OwnedBlockMetadata as _api_OwnedBlockMetadata,
@@ -30,5 +31,9 @@ export async function getOwnedBlockMetadata(
   ctx: ConjureContext,
   blockId: _api_BlockId,
 ): Promise<_api_OwnedBlockMetadata> {
-  return conjureFetch(ctx, `/blocks/${blockId}/owned`, "GET");
+  return conjureFetch(
+    ctx,
+    `/blocks/${encodePathSegment(blockId)}/owned`,
+    "GET",
+  );
 }

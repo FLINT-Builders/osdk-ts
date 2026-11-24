@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../../encodePathSegment.js";
 import type { MonitorRid as _api_MonitorRid } from "../../__components.js";
 import type { GetUsageInformationResponse as _api_metrics_GetUsageInformationResponse } from "../__components.js";
 
@@ -30,7 +31,7 @@ export async function getMonitorUsageData(
 ): Promise<_api_metrics_GetUsageInformationResponse> {
   return conjureFetch(
     ctx,
-    `/monitorMetrics/usage-metrics/${monitorRid}`,
+    `/monitorMetrics/usage-metrics/${encodePathSegment(monitorRid)}`,
     "GET",
   );
 }

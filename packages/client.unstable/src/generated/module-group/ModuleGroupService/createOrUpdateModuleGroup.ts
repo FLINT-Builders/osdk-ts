@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../encodePathSegment.js";
 import type {
   ModuleGroupCreationOrUpdateRequest as _ModuleGroupCreationOrUpdateRequest,
   ModuleGroupName as _ModuleGroupName,
@@ -36,7 +37,7 @@ export async function createOrUpdateModuleGroup(
 ): Promise<void> {
   return conjureFetch(
     ctx,
-    `/module-group/${moduleGroupName}/v2`,
+    `/module-group/${encodePathSegment(moduleGroupName)}/v2`,
     "POST",
     moduleGroupCreationOrUpdateRequest,
   );

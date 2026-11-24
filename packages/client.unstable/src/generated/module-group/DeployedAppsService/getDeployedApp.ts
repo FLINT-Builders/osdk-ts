@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../encodePathSegment.js";
 import type { GetDeployedAppResponse as _GetDeployedAppResponse } from "../__components.js";
 
 /**
@@ -27,5 +28,9 @@ export async function getDeployedApp(
   ctx: ConjureContext,
   deployedAppRid: string,
 ): Promise<_GetDeployedAppResponse | null | undefined> {
-  return conjureFetch(ctx, `/deployed-apps/${deployedAppRid}`, "GET");
+  return conjureFetch(
+    ctx,
+    `/deployed-apps/${encodePathSegment(deployedAppRid)}`,
+    "GET",
+  );
 }

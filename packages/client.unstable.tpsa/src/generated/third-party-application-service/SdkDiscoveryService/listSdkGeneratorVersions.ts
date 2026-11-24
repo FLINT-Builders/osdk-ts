@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../encodePathSegment.js";
 import type { ListSdkGeneratorVersionsResponse } from "../ListSdkGeneratorVersionsResponse.js";
 import type { PageSize } from "../PageSize.js";
 import type { SdkGeneratorType } from "../SdkGeneratorType.js";
@@ -35,7 +36,7 @@ export async function listSdkGeneratorVersions(
 ): Promise<ListSdkGeneratorVersionsResponse> {
   return conjureFetch(
     ctx,
-    `/sdk-discovery/generator/${sdkGeneratorType}/versions`,
+    `/sdk-discovery/generator/${encodePathSegment(sdkGeneratorType)}/versions`,
     "GET",
     undefined,
     { includeRecalled, pageSize, pageToken },

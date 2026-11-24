@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../../encodePathSegment.js";
 import type {
   DeleteObjectSetsBySecurityRidResponse as _api_internal_DeleteObjectSetsBySecurityRidResponse,
   SecurityRid as _api_internal_SecurityRid,
@@ -31,7 +32,7 @@ export async function deleteObjectSetsBySecurityRid(
 ): Promise<_api_internal_DeleteObjectSetsBySecurityRidResponse> {
   return conjureFetch(
     ctx,
-    `/internal/objectSets/securityRid/${securityRid}`,
+    `/internal/objectSets/securityRid/${encodePathSegment(securityRid)}`,
     "DELETE",
   );
 }

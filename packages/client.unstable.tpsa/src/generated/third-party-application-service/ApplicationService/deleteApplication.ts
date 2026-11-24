@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../encodePathSegment.js";
 import type { ApplicationRid } from "../ApplicationRid.js";
 
 /**
@@ -27,5 +28,9 @@ export async function deleteApplication(
   ctx: ConjureContext,
   applicationRid: ApplicationRid,
 ): Promise<void> {
-  return conjureFetch(ctx, `/applications/${applicationRid}`, "DELETE");
+  return conjureFetch(
+    ctx,
+    `/applications/${encodePathSegment(applicationRid)}`,
+    "DELETE",
+  );
 }

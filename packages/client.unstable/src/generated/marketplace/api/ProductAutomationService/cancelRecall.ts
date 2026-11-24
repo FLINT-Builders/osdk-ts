@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../encodePathSegment.js";
 import type {
   BlockSetId as _api_BlockSetId,
   CancelRecallRequest as _api_CancelRecallRequest,
@@ -35,7 +36,7 @@ export async function cancelRecall(
 ): Promise<_api_CancelRecallResponse> {
   return conjureFetch(
     ctx,
-    `/automation/product/${marketplaceRid}/${blockSetId}/release/clearRecall`,
+    `/automation/product/${encodePathSegment(marketplaceRid)}/${encodePathSegment(blockSetId)}/release/clearRecall`,
     "POST",
     request,
   );

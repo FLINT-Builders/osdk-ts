@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../encodePathSegment.js";
 import type {
   ListProductsPageToken as _api_ListProductsPageToken,
   ListProductsResponse as _api_ListProductsResponse,
@@ -34,7 +35,7 @@ export async function listProducts(
 ): Promise<_api_ListProductsResponse> {
   return conjureFetch(
     ctx,
-    `/installation-app-service/${marketplaceRid}/product/list`,
+    `/installation-app-service/${encodePathSegment(marketplaceRid)}/product/list`,
     "GET",
     undefined,
     { pageToken, limit },

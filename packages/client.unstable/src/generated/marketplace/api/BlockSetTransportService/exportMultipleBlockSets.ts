@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../encodePathSegment.js";
 import type {
   ExportMultipleBlockSetsRequest as _api_ExportMultipleBlockSetsRequest,
   MarketplaceRid as _api_MarketplaceRid,
@@ -37,7 +38,7 @@ export async function exportMultipleBlockSets(
 ): Promise<string> {
   return conjureFetch(
     ctx,
-    `/block-set-transport/${marketplaceRid}/bulk`,
+    `/block-set-transport/${encodePathSegment(marketplaceRid)}/bulk`,
     "POST",
     request,
     undefined,

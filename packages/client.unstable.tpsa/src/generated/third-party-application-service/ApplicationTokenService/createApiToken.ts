@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../encodePathSegment.js";
 import type { ApplicationRid } from "../ApplicationRid.js";
 import type { CreateApiTokenRequest } from "../CreateApiTokenRequest.js";
 
@@ -32,7 +33,7 @@ export async function createApiToken(
 ): Promise<string> {
   return conjureFetch(
     ctx,
-    `/application-tokens/${applicationRid}`,
+    `/application-tokens/${encodePathSegment(applicationRid)}`,
     "POST",
     request,
   );

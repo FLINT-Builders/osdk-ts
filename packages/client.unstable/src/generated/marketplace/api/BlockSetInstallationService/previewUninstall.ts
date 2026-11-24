@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../encodePathSegment.js";
 import type {
   BlockSetInstallationRid as _api_BlockSetInstallationRid,
   PreviewUninstallResponse as _api_PreviewUninstallResponse,
@@ -40,7 +41,7 @@ export async function previewUninstall(
 ): Promise<_api_PreviewUninstallResponse> {
   return conjureFetch(
     ctx,
-    `/block-set-installation/${blockSetInstallationRid}/uninstall/preview`,
+    `/block-set-installation/${encodePathSegment(blockSetInstallationRid)}/uninstall/preview`,
     "POST",
   );
 }

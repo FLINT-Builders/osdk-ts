@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../../encodePathSegment.js";
 import type { LinkTypeRid as _api_LinkTypeRid } from "../../__components.js";
 import type { GetSuggestedRolesResponse as _api_permissions_GetSuggestedRolesResponse } from "../__components.js";
 
@@ -35,7 +36,7 @@ export async function getSuggestedRolesForLinkType(
 ): Promise<_api_permissions_GetSuggestedRolesResponse> {
   return conjureFetch(
     ctx,
-    `/permissions/suggestRoles/linkType/${linkTypeRid}`,
+    `/permissions/suggestRoles/linkType/${encodePathSegment(linkTypeRid)}`,
     "GET",
   );
 }

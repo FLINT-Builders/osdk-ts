@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../encodePathSegment.js";
 import type {
   MarketplaceMetadataVersion as _api_MarketplaceMetadataVersion,
   MarketplaceRid as _api_MarketplaceRid,
@@ -32,7 +33,7 @@ export async function getMarketplaceMetadataAtVersion(
 ): Promise<_api_VersionedMarketplaceMetadata> {
   return conjureFetch(
     ctx,
-    `/marketplaces/${marketplaceRid}/metadata/${version}`,
+    `/marketplaces/${encodePathSegment(marketplaceRid)}/metadata/${encodePathSegment(version)}`,
     "GET",
   );
 }

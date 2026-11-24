@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../../encodePathSegment.js";
 import type { MonitorRid as _api_MonitorRid } from "../../__components.js";
 import type { DisableAutomationRequest as _api_registry_DisableAutomationRequest } from "../__components.js";
 
@@ -29,7 +30,7 @@ export async function disableAutomation(
 ): Promise<void> {
   return conjureFetch(
     ctx,
-    `/registry/v0/disable/${monitorRid}`,
+    `/registry/v0/disable/${encodePathSegment(monitorRid)}`,
     "POST",
     request,
   );

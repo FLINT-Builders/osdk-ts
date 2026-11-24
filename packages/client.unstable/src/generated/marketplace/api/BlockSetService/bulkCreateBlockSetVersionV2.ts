@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../encodePathSegment.js";
 import type {
   BulkCreateBlockSetVersionRequest as _api_BulkCreateBlockSetVersionRequest,
   BulkCreateBlockSetVersionResponse as _api_BulkCreateBlockSetVersionResponse,
@@ -39,7 +40,7 @@ export async function bulkCreateBlockSetVersionV2(
 ): Promise<_api_BulkCreateBlockSetVersionResponse> {
   return conjureFetch(
     ctx,
-    `/block-sets/v2/${marketplaceRid}/versions/bulk`,
+    `/block-sets/v2/${encodePathSegment(marketplaceRid)}/versions/bulk`,
     "POST",
     request,
   );

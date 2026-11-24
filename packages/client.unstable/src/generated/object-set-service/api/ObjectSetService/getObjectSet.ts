@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../encodePathSegment.js";
 import type {
   GetObjectSetResponse as _api_GetObjectSetResponse,
   ObjectSetRid as _api_ObjectSetRid,
@@ -28,5 +29,9 @@ export async function getObjectSet(
   ctx: ConjureContext,
   objectSetRid: _api_ObjectSetRid,
 ): Promise<_api_GetObjectSetResponse> {
-  return conjureFetch(ctx, `/objectSets/${objectSetRid}`, "GET");
+  return conjureFetch(
+    ctx,
+    `/objectSets/${encodePathSegment(objectSetRid)}`,
+    "GET",
+  );
 }

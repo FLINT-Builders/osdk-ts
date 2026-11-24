@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../../encodePathSegment.js";
 import type {
   GlobalBranchRid as _api_GlobalBranchRid,
   OntologyBranchRid as _api_OntologyBranchRid,
@@ -36,5 +37,9 @@ export async function getOntologyBranchRid(
   ctx: ConjureContext,
   globalBranchRid: _api_GlobalBranchRid,
 ): Promise<_api_OntologyBranchRid> {
-  return conjureFetch(ctx, `/ontology/branch/global/${globalBranchRid}`, "GET");
+  return conjureFetch(
+    ctx,
+    `/ontology/branch/global/${encodePathSegment(globalBranchRid)}`,
+    "GET",
+  );
 }

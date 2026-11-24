@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../encodePathSegment.js";
 import type { DeployedAppRunStatus as _DeployedAppRunStatus } from "../__components.js";
 
 /**
@@ -28,7 +29,7 @@ export async function getDeployedAppRunStatus(
 ): Promise<_DeployedAppRunStatus> {
   return conjureFetch(
     ctx,
-    `/deployed-apps/${deployedAppRid}/deployed-app-run-status`,
+    `/deployed-apps/${encodePathSegment(deployedAppRid)}/deployed-app-run-status`,
     "GET",
   );
 }

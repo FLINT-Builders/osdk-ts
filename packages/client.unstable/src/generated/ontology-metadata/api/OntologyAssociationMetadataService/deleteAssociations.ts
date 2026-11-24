@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../encodePathSegment.js";
 import type { OntologyRid as _api_OntologyRid } from "../__components.js";
 import type {
   DeleteAssociationsRequest as _api_association_metadata_DeleteAssociationsRequest,
@@ -32,7 +33,7 @@ export async function deleteAssociations(
 ): Promise<_api_association_metadata_DeleteAssociationsResponse> {
   return conjureFetch(
     ctx,
-    `/association/ontology/${ontologyRid}/deleteOntologyEntityAssociations`,
+    `/association/ontology/${encodePathSegment(ontologyRid)}/deleteOntologyEntityAssociations`,
     "PUT",
     request,
   );

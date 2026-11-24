@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../../encodePathSegment.js";
 import type { OntologyRid as _api_OntologyRid } from "../../../api/__components.js";
 import type {
   LoadAllOntologyBranchesWithProposalPageRequest as _approvals_api_LoadAllOntologyBranchesWithProposalPageRequest,
@@ -32,7 +33,7 @@ export async function loadAllBranchesWithProposal(
 ): Promise<_approvals_api_LoadAllOntologyBranchesWithProposalPageResponse> {
   return conjureFetch(
     ctx,
-    `/ontology/approvals/experimental/${ontologyRid}/loadAllBranchesWithProposal`,
+    `/ontology/approvals/experimental/${encodePathSegment(ontologyRid)}/loadAllBranchesWithProposal`,
     "POST",
     request,
   );

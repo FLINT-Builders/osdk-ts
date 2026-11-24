@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../encodePathSegment.js";
 import type {
   DraftGroupRid as _api_DraftGroupRid,
   FinalizeDraftGroupRequest as _api_FinalizeDraftGroupRequest,
@@ -41,7 +42,7 @@ export async function finalizeDraftGroup(
 ): Promise<_api_FinalizeDraftGroupResponse> {
   return conjureFetch(
     ctx,
-    `/draft-groups/${draftGroupRid}/finalize`,
+    `/draft-groups/${encodePathSegment(draftGroupRid)}/finalize`,
     "POST",
     request,
   );

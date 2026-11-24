@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../../encodePathSegment.js";
 import type { OntologyBranchRid as _api_OntologyBranchRid } from "../../../api/__components.js";
 import type {
   DiscardChangesRequest as _branch_api_DiscardChangesRequest,
@@ -37,7 +38,7 @@ export async function discardChangesOnBranchV2(
 ): Promise<_branch_api_DiscardChangesResponseV2> {
   return conjureFetch(
     ctx,
-    `/ontology/branch/${ontologyBranchRid}/discardChangesV2`,
+    `/ontology/branch/${encodePathSegment(ontologyBranchRid)}/discardChangesV2`,
     "POST",
     request,
   );

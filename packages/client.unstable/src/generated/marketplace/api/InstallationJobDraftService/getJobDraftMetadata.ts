@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../encodePathSegment.js";
 import type {
   BlockSetInstallationJobRid as _api_BlockSetInstallationJobRid,
   GetJobDraftMetadataResponse as _api_GetJobDraftMetadataResponse,
@@ -32,5 +33,9 @@ export async function getJobDraftMetadata(
   ctx: ConjureContext,
   jobRid: _api_BlockSetInstallationJobRid,
 ): Promise<_api_GetJobDraftMetadataResponse> {
-  return conjureFetch(ctx, `/installation-job-draft/${jobRid}/metadata`, "GET");
+  return conjureFetch(
+    ctx,
+    `/installation-job-draft/${encodePathSegment(jobRid)}/metadata`,
+    "GET",
+  );
 }

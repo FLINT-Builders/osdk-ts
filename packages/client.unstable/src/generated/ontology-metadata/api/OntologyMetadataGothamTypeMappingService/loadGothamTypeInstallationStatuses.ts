@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../encodePathSegment.js";
 import type { OntologyRid as _api_OntologyRid } from "../__components.js";
 import type {
   LoadGothamTypeInstallationStatusesRequest as _api_typemapping_LoadGothamTypeInstallationStatusesRequest,
@@ -41,7 +42,7 @@ export async function loadGothamTypeInstallationStatuses(
 ): Promise<_api_typemapping_LoadGothamTypeInstallationStatusesResponse> {
   return conjureFetch(
     ctx,
-    `/ontology/typemapping/loadGothamTypeInstallationStatuses/${ontologyRid}`,
+    `/ontology/typemapping/loadGothamTypeInstallationStatuses/${encodePathSegment(ontologyRid)}`,
     "PUT",
     request,
   );

@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../encodePathSegment.js";
 import type {
   EditProductGroupRequest as _api_EditProductGroupRequest,
   EditProductGroupResponse as _api_EditProductGroupResponse,
@@ -32,7 +33,7 @@ export async function editProductGroup(
 ): Promise<_api_EditProductGroupResponse> {
   return conjureFetch(
     ctx,
-    `/product-groups/${productGroupRid}`,
+    `/product-groups/${encodePathSegment(productGroupRid)}`,
     "PUT",
     request,
   );

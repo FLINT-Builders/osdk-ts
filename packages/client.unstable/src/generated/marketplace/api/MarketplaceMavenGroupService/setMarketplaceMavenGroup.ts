@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../encodePathSegment.js";
 import type {
   MarketplaceRid as _api_MarketplaceRid,
   SetMarketplaceMavenGroupRequest as _api_SetMarketplaceMavenGroupRequest,
@@ -33,7 +34,7 @@ export async function setMarketplaceMavenGroup(
 ): Promise<_api_SetMarketplaceMavenGroupResponse> {
   return conjureFetch(
     ctx,
-    `/marketplace-maven-group/${marketplaceRid}/maven-group`,
+    `/marketplace-maven-group/${encodePathSegment(marketplaceRid)}/maven-group`,
     "PUT",
     request,
   );

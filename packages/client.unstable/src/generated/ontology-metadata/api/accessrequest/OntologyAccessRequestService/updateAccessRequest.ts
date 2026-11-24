@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../../encodePathSegment.js";
 import type { AccessRequestRid as _api_AccessRequestRid } from "../../__components.js";
 import type {
   UpdateAccessRequestRequest as _api_accessrequest_UpdateAccessRequestRequest,
@@ -45,7 +46,7 @@ export async function updateAccessRequest(
 ): Promise<_api_accessrequest_UpdateAccessRequestResponse> {
   return conjureFetch(
     ctx,
-    `/ontology/access-request/${accessRequestRid}`,
+    `/ontology/access-request/${encodePathSegment(accessRequestRid)}`,
     "PUT",
     updateAccessRequest,
   );

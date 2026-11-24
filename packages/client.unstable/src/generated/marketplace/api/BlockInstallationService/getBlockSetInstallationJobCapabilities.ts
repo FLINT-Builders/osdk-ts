@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../encodePathSegment.js";
 import type {
   BlockSetInstallationJobCapabilities as _api_BlockSetInstallationJobCapabilities,
   InstallBlocksJobRid as _api_InstallBlocksJobRid,
@@ -31,7 +32,7 @@ export async function getBlockSetInstallationJobCapabilities(
 ): Promise<_api_BlockSetInstallationJobCapabilities> {
   return conjureFetch(
     ctx,
-    `/block-installation/v2/block-set-installations/${jobRid}/job-capabilities`,
+    `/block-installation/v2/block-set-installations/${encodePathSegment(jobRid)}/job-capabilities`,
     "GET",
   );
 }

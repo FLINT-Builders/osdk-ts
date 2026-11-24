@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../encodePathSegment.js";
 import type { ApplicationRid } from "../ApplicationRid.js";
 import type { CreateClientResponse } from "../CreateClientResponse.js";
 
@@ -28,5 +29,9 @@ export async function createClient(
   ctx: ConjureContext,
   applicationRid: ApplicationRid,
 ): Promise<CreateClientResponse> {
-  return conjureFetch(ctx, `/application-clients/${applicationRid}`, "PUT");
+  return conjureFetch(
+    ctx,
+    `/application-clients/${encodePathSegment(applicationRid)}`,
+    "PUT",
+  );
 }

@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../encodePathSegment.js";
 import type {
   DeleteDraftGroupResponse as _api_DeleteDraftGroupResponse,
   DraftGroupRid as _api_DraftGroupRid,
@@ -33,5 +34,9 @@ export async function deleteDraftGroup(
   ctx: ConjureContext,
   draftGroupRid: _api_DraftGroupRid,
 ): Promise<_api_DeleteDraftGroupResponse> {
-  return conjureFetch(ctx, `/draft-groups/${draftGroupRid}`, "DELETE");
+  return conjureFetch(
+    ctx,
+    `/draft-groups/${encodePathSegment(draftGroupRid)}`,
+    "DELETE",
+  );
 }

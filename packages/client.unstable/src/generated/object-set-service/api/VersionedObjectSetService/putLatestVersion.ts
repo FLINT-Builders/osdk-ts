@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../encodePathSegment.js";
 import type {
   LatestVersionResponse as _api_LatestVersionResponse,
   UpdateLatestVersionRequest as _api_UpdateLatestVersionRequest,
@@ -32,7 +33,7 @@ export async function putLatestVersion(
 ): Promise<_api_LatestVersionResponse> {
   return conjureFetch(
     ctx,
-    `/versionedObjectSets/${versionedObjectSetRid}/latestVersion`,
+    `/versionedObjectSets/${encodePathSegment(versionedObjectSetRid)}/latestVersion`,
     "PUT",
     request,
   );

@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../encodePathSegment.js";
 import type { ApplicationRid } from "../ApplicationRid.js";
 import type { UpdateWebsiteRolesRequest } from "../UpdateWebsiteRolesRequest.js";
 
@@ -37,7 +38,7 @@ export async function updateWebsiteRoles(
 ): Promise<void> {
   return conjureFetch(
     ctx,
-    `/application-websites/${applicationRid}/roles`,
+    `/application-websites/${encodePathSegment(applicationRid)}/roles`,
     "PUT",
     request,
   );

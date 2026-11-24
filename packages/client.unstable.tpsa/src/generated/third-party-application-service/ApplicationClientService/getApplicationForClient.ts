@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../encodePathSegment.js";
 import type { ApplicationRid } from "../ApplicationRid.js";
 import type { ClientId } from "../ClientId.js";
 
@@ -31,7 +32,7 @@ export async function getApplicationForClient(
 ): Promise<ApplicationRid | undefined> {
   return conjureFetch(
     ctx,
-    `/application-clients/for-client/${clientId}`,
+    `/application-clients/for-client/${encodePathSegment(clientId)}`,
     "GET",
   );
 }

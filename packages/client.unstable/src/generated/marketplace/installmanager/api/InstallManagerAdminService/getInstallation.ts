@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../../encodePathSegment.js";
 import type {
   ManagedInstallationName as _api_ManagedInstallationName,
   NamespaceRid as _api_NamespaceRid,
@@ -34,7 +35,7 @@ export async function getInstallation(
 ): Promise<_installmanager_api_GetInstallationResponse> {
   return conjureFetch(
     ctx,
-    `/install-manager-admin/organization/${organizationRid}/namespace/${namespaceRid}/installation/${installationName}`,
+    `/install-manager-admin/organization/${encodePathSegment(organizationRid)}/namespace/${encodePathSegment(namespaceRid)}/installation/${encodePathSegment(installationName)}`,
     "GET",
   );
 }

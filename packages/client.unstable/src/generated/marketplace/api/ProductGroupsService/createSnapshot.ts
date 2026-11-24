@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../encodePathSegment.js";
 import type {
   CreateSnapshotRequest as _api_CreateSnapshotRequest,
   CreateSnapshotResponse as _api_CreateSnapshotResponse,
@@ -38,7 +39,7 @@ export async function createSnapshot(
 ): Promise<_api_CreateSnapshotResponse> {
   return conjureFetch(
     ctx,
-    `/product-groups/${productGroupRid}/snapshots`,
+    `/product-groups/${encodePathSegment(productGroupRid)}/snapshots`,
     "POST",
     request,
   );

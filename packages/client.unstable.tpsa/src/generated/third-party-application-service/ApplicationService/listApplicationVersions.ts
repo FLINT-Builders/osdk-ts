@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../encodePathSegment.js";
 import type { ApplicationRid } from "../ApplicationRid.js";
 import type { ApplicationVersionPageToken } from "../ApplicationVersionPageToken.js";
 import type { ListApplicationVersionsResponse } from "../ListApplicationVersionsResponse.js";
@@ -34,7 +35,7 @@ export async function listApplicationVersions(
 ): Promise<ListApplicationVersionsResponse> {
   return conjureFetch(
     ctx,
-    `/applications/${applicationRid}/versions`,
+    `/applications/${encodePathSegment(applicationRid)}/versions`,
     "GET",
     undefined,
     { pageSize, pageToken },

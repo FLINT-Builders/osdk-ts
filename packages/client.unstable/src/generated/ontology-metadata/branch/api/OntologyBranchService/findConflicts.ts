@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../../encodePathSegment.js";
 import type { OntologyBranchRid as _api_OntologyBranchRid } from "../../../api/__components.js";
 import type {
   FindConflictsRequest as _branch_api_FindConflictsRequest,
@@ -35,7 +36,7 @@ export async function findConflicts(
 ): Promise<_branch_api_FindConflictsResponse> {
   return conjureFetch(
     ctx,
-    `/ontology/branch/${ontologyBranchRid}/findConflicts`,
+    `/ontology/branch/${encodePathSegment(ontologyBranchRid)}/findConflicts`,
     "POST",
     request,
   );

@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../../encodePathSegment.js";
 import type { OntologyRid as _api_OntologyRid } from "../../__components.js";
 import type {
   CreatePackageRequest as _api_packages_CreatePackageRequest,
@@ -36,7 +37,7 @@ export async function createPackage(
 ): Promise<_api_packages_CreatePackageResponse> {
   return conjureFetch(
     ctx,
-    `/ontology/packages/${ontologyRid}/create`,
+    `/ontology/packages/${encodePathSegment(ontologyRid)}/create`,
     "PUT",
     request,
   );

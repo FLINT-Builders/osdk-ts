@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../encodePathSegment.js";
 import type { ApplicationRid } from "../ApplicationRid.js";
 import type { GetMetricsRequest } from "../GetMetricsRequest.js";
 import type { GetMetricsResponse } from "../GetMetricsResponse.js";
@@ -34,7 +35,7 @@ export async function getMetrics(
 ): Promise<GetMetricsResponse> {
   return conjureFetch(
     ctx,
-    `/application-metrics/${applicationRid}/metrics`,
+    `/application-metrics/${encodePathSegment(applicationRid)}/metrics`,
     "PUT",
     request,
   );

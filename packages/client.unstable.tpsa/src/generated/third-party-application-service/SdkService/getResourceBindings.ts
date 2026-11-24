@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../encodePathSegment.js";
 import type { ArtifactsRepositoryRid } from "../ArtifactsRepositoryRid.js";
 import type { PackageName } from "../PackageName.js";
 import type { ResourceBindings } from "../ResourceBindings.js";
@@ -37,7 +38,7 @@ export async function getResourceBindings(
 ): Promise<ResourceBindings> {
   return conjureFetch(
     ctx,
-    `/sdks/${repositoryRid}/${packageName}/bindings`,
+    `/sdks/${encodePathSegment(repositoryRid)}/${encodePathSegment(packageName)}/bindings`,
     "GET",
   );
 }

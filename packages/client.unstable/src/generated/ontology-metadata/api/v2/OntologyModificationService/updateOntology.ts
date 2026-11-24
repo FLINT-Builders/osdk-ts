@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../../encodePathSegment.js";
 import type { OntologyRid as _api_OntologyRid } from "../../__components.js";
 import type {
   OntologyUpdateRequest as _api_modification_OntologyUpdateRequest,
@@ -33,7 +34,7 @@ export async function updateOntology(
 ): Promise<_api_modification_OntologyUpdateResponse> {
   return conjureFetch(
     ctx,
-    `/ontology/v2/update/${ontologyRid}`,
+    `/ontology/v2/update/${encodePathSegment(ontologyRid)}`,
     "POST",
     request,
   );

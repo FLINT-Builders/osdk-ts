@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../encodePathSegment.js";
 import type { JobId as _JobId } from "../__components.js";
 
 /**
@@ -29,7 +30,7 @@ export async function softCancel(
 ): Promise<void> {
   return conjureFetch(
     ctx,
-    `/module-group-multiplexer/jobs/${jobId}/soft-cancel`,
+    `/module-group-multiplexer/jobs/${encodePathSegment(jobId)}/soft-cancel`,
     "PUT",
   );
 }
