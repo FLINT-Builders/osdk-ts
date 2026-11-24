@@ -14,7 +14,14 @@
  * limitations under the License.
  */
 
-import { mkdtemp, readdir, readFile, rm } from "node:fs/promises";
+import {
+  mkdir,
+  mkdtemp,
+  readdir,
+  readFile,
+  rm,
+  writeFile,
+} from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -48,6 +55,10 @@ function singleObjectOntology(): WireOntologyDefinition {
   todo.implementsInterfaces2 = {};
   delete ontology.objectTypes.Person;
   return ontology;
+}
+
+function diskFs(): MinimalFs {
+  return { mkdir, writeFile, readdir };
 }
 
 function recordingFs(): { fs: MinimalFs; mutations: string[] } {
@@ -120,16 +131,7 @@ describe("unsanitized ontology metadata", () => {
       await generateClientSdkVersionTwoPointZero(
         ontology,
         "generator-test",
-        {
-          mkdir: (target, options) =>
-            import("node:fs/promises").then((fs) => fs.mkdir(target, options)),
-          writeFile: (target, contents) =>
-            import("node:fs/promises").then((fs) =>
-              fs.writeFile(target, contents)
-            ),
-          readdir: (target) =>
-            import("node:fs/promises").then((fs) => fs.readdir(target)),
-        },
+        diskFs(),
         out,
       );
       const index = await readFile(path.join(out, "index.ts"), "utf8");
@@ -194,6 +196,26 @@ describe("unsanitized ontology metadata", () => {
     const ontology = singleObjectOntology();
     ontology.branch = {
       rid: "x\"; globalThis.__inj = \"branch\"; export const __end = \"",
+    };
+    expectRejectedBeforeOutput(await generateOrReject(ontology));
+  });
+
+  it("rejects a struct field api name used as an unquoted type member", async () => {
+    const ontology = singleObjectOntology();
+    const todo = ontology.objectTypes.Todo;
+    if (todo == null) throw new Error("Todo fixture missing");
+    todo.objectType.properties.address = {
+      dataType: {
+        type: "struct",
+        structFieldTypes: [{
+          apiName: "city\n}\nglobalThis.__inj = 1\nexport interface X { city",
+          rid: "ri.struct-field.1",
+          dataType: { type: "string" },
+          typeClasses: [],
+        }],
+      },
+      rid: "ri.property.address",
+      typeClasses: [],
     };
     expectRejectedBeforeOutput(await generateOrReject(ontology));
   });
@@ -308,16 +330,7 @@ describe("unsanitized ontology metadata", () => {
       await generateClientSdkVersionTwoPointZero(
         ontology,
         "generator-test",
-        {
-          mkdir: (target, options) =>
-            import("node:fs/promises").then((fs) => fs.mkdir(target, options)),
-          writeFile: (target, contents) =>
-            import("node:fs/promises").then((fs) =>
-              fs.writeFile(target, contents)
-            ),
-          readdir: (target) =>
-            import("node:fs/promises").then((fs) => fs.readdir(target)),
-        },
+        diskFs(),
         out,
       );
       const files = await collectTs(out);
