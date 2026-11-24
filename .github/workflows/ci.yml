@@ -443,7 +443,12 @@ jobs:
 
       - name: Setup Verdaccio
         run: |
-          npx npm-auth-to-token -u verdaccio -p fake -e fake@palantir.com -r http://localhost:4873
+          token=$(curl --silent --show-error --fail -X PUT --user verdaccio:fake \
+            -H "Content-Type: application/json" \
+            -d '{"name":"verdaccio","password":"fake","email":"fake@palantir.com"}' \
+            http://localhost:4873/-/user/org.couchdb.user:verdaccio \
+            | node -e 'const { token } = JSON.parse(require("fs").readFileSync(0, "utf8")); if (!token) throw new Error("Verdaccio returned no token"); process.stdout.write(token)')
+          npm config set //localhost:4873/:_authToken "$token"
           npm config set registry http://localhost:4873
 
       - name: Faux Release
