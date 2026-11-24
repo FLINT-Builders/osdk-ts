@@ -19,10 +19,14 @@ import {
   ensureTrailingSlash,
   YargsCheckError,
 } from "@osdk/cli.common";
-import type { CommandModule } from "yargs";
+import type { Argv, CommandModule } from "yargs";
 
 import type { WidgetSetRid } from "../../net/WidgetSetRid.js";
 import configLoader from "../../util/configLoader.js";
+import {
+  getFoundryUrlError,
+  resolveFoundryUrl,
+} from "../../util/resolveFoundryUrl.js";
 import { logConfigFileMiddleware } from "../../yargs/logConfigFileMiddleware.js";
 import type { CommonWidgetSetArgs } from "./CommonWidgetSetArgs.js";
 import deploy from "./deploy/index.js";
@@ -36,7 +40,7 @@ const command: CommandModule<CliCommonArgs, CommonWidgetSetArgs> = {
     const config = await configLoader("widgetSet");
     const widgetSet = config?.foundryConfig.widgetSet.rid;
     const foundryUrl = config?.foundryConfig.foundryUrl;
-    return argv
+    const withFoundryUrl = argv
       .options({
         widgetSet: {
           type: "string",
@@ -47,7 +51,9 @@ const command: CommandModule<CliCommonArgs, CommonWidgetSetArgs> = {
         foundryUrl: {
           coerce: ensureTrailingSlash,
           type: "string",
-          ...(foundryUrl ? { default: foundryUrl } : { demandOption: true }),
+          ...(foundryUrl
+            ? { defaultDescription: foundryUrl }
+            : { demandOption: true }),
           description: "URL for the Foundry stack",
         },
         token: {
@@ -65,14 +71,22 @@ const command: CommandModule<CliCommonArgs, CommonWidgetSetArgs> = {
         ["widgetSet", "foundryUrl", "token", "tokenFile"],
         "Common Options",
       )
-      .command(version)
-      .command(deploy)
       .check((args) => {
-        if (!args.foundryUrl.startsWith("https://")) {
-          throw new YargsCheckError("foundryUrl must start with https://");
+        const foundryUrlError =
+          args.foundryUrl != null
+            ? getFoundryUrlError(args.foundryUrl)
+            : undefined;
+        if (foundryUrlError != null) {
+          throw new YargsCheckError(foundryUrlError);
         }
         return true;
       })
+      .middleware(async (args) => {
+        args.foundryUrl = await resolveFoundryUrl(args.foundryUrl, config);
+      }) as Argv<CommonWidgetSetArgs>;
+    return withFoundryUrl
+      .command(version)
+      .command(deploy)
       .middleware((args) => {
         void logConfigFileMiddleware("widgetSet");
         logWidgetSetCommandConfigFileOverride(args, config?.foundryConfig);

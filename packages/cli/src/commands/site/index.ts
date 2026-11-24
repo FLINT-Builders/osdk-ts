@@ -16,10 +16,14 @@
 
 import type { CliCommonArgs } from "@osdk/cli.common";
 import { ensureTrailingSlash, YargsCheckError } from "@osdk/cli.common";
-import type { CommandModule } from "yargs";
+import type { Argv, CommandModule } from "yargs";
 
 import type { ThirdPartyAppRid } from "../../net/ThirdPartyAppRid.js";
 import configLoader from "../../util/configLoader.js";
+import {
+  getFoundryUrlError,
+  resolveFoundryUrl,
+} from "../../util/resolveFoundryUrl.js";
 import { logConfigFileMiddleware } from "../../yargs/logConfigFileMiddleware.js";
 import type { CommonSiteArgs } from "./CommonSiteArgs.js";
 import deploy from "./deploy/index.js";
@@ -33,7 +37,7 @@ const command: CommandModule<CliCommonArgs, CommonSiteArgs> = {
     const config = await configLoader("site");
     const application = config?.foundryConfig.site.application;
     const foundryUrl = config?.foundryConfig.foundryUrl;
-    return argv
+    const withFoundryUrl = argv
       .options({
         application: {
           type: "string",
@@ -44,7 +48,9 @@ const command: CommandModule<CliCommonArgs, CommonSiteArgs> = {
         foundryUrl: {
           coerce: ensureTrailingSlash,
           type: "string",
-          ...(foundryUrl ? { default: foundryUrl } : { demandOption: true }),
+          ...(foundryUrl
+            ? { defaultDescription: foundryUrl }
+            : { demandOption: true }),
           description: "URL for the Foundry stack",
         },
         token: {
@@ -62,14 +68,22 @@ const command: CommandModule<CliCommonArgs, CommonSiteArgs> = {
         ["application", "foundryUrl", "token", "tokenFile"],
         "Common Options",
       )
-      .command(version)
-      .command(deploy)
       .check((args) => {
-        if (!args.foundryUrl.startsWith("https://")) {
-          throw new YargsCheckError("foundryUrl must start with https://");
+        const foundryUrlError =
+          args.foundryUrl != null
+            ? getFoundryUrlError(args.foundryUrl)
+            : undefined;
+        if (foundryUrlError != null) {
+          throw new YargsCheckError(foundryUrlError);
         }
         return true;
       })
+      .middleware(async (args) => {
+        args.foundryUrl = await resolveFoundryUrl(args.foundryUrl, config);
+      }) as Argv<CommonSiteArgs>;
+    return withFoundryUrl
+      .command(version)
+      .command(deploy)
       .middleware((args) => {
         void logConfigFileMiddleware("site");
         void logSiteCommandConfigFileOverride(args, config?.foundryConfig);
