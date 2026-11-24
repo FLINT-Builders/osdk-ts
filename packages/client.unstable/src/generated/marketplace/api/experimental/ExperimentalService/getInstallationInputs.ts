@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../../encodePathSegment.js";
 import type { BlockSetInstallationRid as _api_BlockSetInstallationRid } from "../../__components.js";
 import type {
   GetInstallationInputsRequest as _api_experimental_GetInstallationInputsRequest,
@@ -33,7 +34,7 @@ export async function getInstallationInputs(
 ): Promise<_api_experimental_GetInstallationInputsResponse> {
   return conjureFetch(
     ctx,
-    `/experimental/installations/${installationRid}/inputs`,
+    `/experimental/installations/${encodePathSegment(installationRid)}/inputs`,
     "POST",
     request,
   );

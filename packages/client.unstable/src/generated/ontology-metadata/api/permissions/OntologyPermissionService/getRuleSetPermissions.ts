@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../../encodePathSegment.js";
 import type {
   OntologyBranchRid as _api_OntologyBranchRid,
   RuleSetRid as _api_RuleSetRid,
@@ -32,7 +33,7 @@ export async function getRuleSetPermissions(
 ): Promise<_api_permissions_GetRuleSetPermissionsResponse> {
   return conjureFetch(
     ctx,
-    `/permissions/ruleSet/${ruleSetRid}`,
+    `/permissions/ruleSet/${encodePathSegment(ruleSetRid)}`,
     "GET",
     undefined,
     { ontologyBranchRid },

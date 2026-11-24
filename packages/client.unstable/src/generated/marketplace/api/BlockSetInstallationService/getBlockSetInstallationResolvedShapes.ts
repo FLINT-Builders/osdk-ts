@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../encodePathSegment.js";
 import type {
   BlockSetInstallationResolvedShapes as _api_BlockSetInstallationResolvedShapes,
   BlockSetInstallationRid as _api_BlockSetInstallationRid,
@@ -40,7 +41,7 @@ export async function getBlockSetInstallationResolvedShapes(
 ): Promise<_api_BlockSetInstallationResolvedShapes> {
   return conjureFetch(
     ctx,
-    `/block-set-installation/${blockSetInstallationRid}/resolved-shapes`,
+    `/block-set-installation/${encodePathSegment(blockSetInstallationRid)}/resolved-shapes`,
     "GET",
   );
 }

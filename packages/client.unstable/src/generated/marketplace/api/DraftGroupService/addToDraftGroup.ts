@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../encodePathSegment.js";
 import type {
   AddToDraftGroupRequest as _api_AddToDraftGroupRequest,
   DraftGroup as _api_DraftGroup,
@@ -36,7 +37,7 @@ export async function addToDraftGroup(
 ): Promise<_api_DraftGroup> {
   return conjureFetch(
     ctx,
-    `/draft-groups/${draftGroupRid}/add-versions`,
+    `/draft-groups/${encodePathSegment(draftGroupRid)}/add-versions`,
     "POST",
     request,
   );

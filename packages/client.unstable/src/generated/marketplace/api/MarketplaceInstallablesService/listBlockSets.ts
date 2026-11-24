@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../encodePathSegment.js";
 import type {
   ListBlockSetsPageToken as _api_ListBlockSetsPageToken,
   ListBlockSetsResponse as _api_ListBlockSetsResponse,
@@ -33,7 +34,7 @@ export async function listBlockSets(
 ): Promise<_api_ListBlockSetsResponse> {
   return conjureFetch(
     ctx,
-    `/installation-app-service/${marketplaceRid}/blockSet/list`,
+    `/installation-app-service/${encodePathSegment(marketplaceRid)}/blockSet/list`,
     "POST",
     pageToken,
     { limit },

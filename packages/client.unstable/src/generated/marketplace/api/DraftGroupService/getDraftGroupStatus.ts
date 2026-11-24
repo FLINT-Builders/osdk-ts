@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../encodePathSegment.js";
 import type {
   DraftGroupRid as _api_DraftGroupRid,
   GetDraftGroupStatusResponse as _api_GetDraftGroupStatusResponse,
@@ -32,5 +33,9 @@ export async function getDraftGroupStatus(
   ctx: ConjureContext,
   draftGroupRid: _api_DraftGroupRid,
 ): Promise<_api_GetDraftGroupStatusResponse> {
-  return conjureFetch(ctx, `/draft-groups/${draftGroupRid}/status`, "GET");
+  return conjureFetch(
+    ctx,
+    `/draft-groups/${encodePathSegment(draftGroupRid)}/status`,
+    "GET",
+  );
 }

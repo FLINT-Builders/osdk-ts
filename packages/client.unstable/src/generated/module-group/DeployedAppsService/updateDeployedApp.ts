@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../encodePathSegment.js";
 import type {
   UpdateDeployedAppConfigRequest as _UpdateDeployedAppConfigRequest,
   UpdateDeployedAppConfigResponse as _UpdateDeployedAppConfigResponse,
@@ -29,5 +30,10 @@ export async function updateDeployedApp(
   deployedAppRid: string,
   request: _UpdateDeployedAppConfigRequest,
 ): Promise<_UpdateDeployedAppConfigResponse> {
-  return conjureFetch(ctx, `/deployed-apps/${deployedAppRid}`, "PUT", request);
+  return conjureFetch(
+    ctx,
+    `/deployed-apps/${encodePathSegment(deployedAppRid)}`,
+    "PUT",
+    request,
+  );
 }

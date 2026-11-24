@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../encodePathSegment.js";
 import type {
   CheckCanExportFromStoreResponse as _api_CheckCanExportFromStoreResponse,
   MarketplaceRid as _api_MarketplaceRid,
@@ -31,7 +32,7 @@ export async function checkCanExportFromStore(
 ): Promise<_api_CheckCanExportFromStoreResponse> {
   return conjureFetch(
     ctx,
-    `/block-set-transport/${marketplaceRid}/permission/export`,
+    `/block-set-transport/${encodePathSegment(marketplaceRid)}/permission/export`,
     "POST",
   );
 }

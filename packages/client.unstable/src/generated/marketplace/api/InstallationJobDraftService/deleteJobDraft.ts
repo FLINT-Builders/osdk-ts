@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../encodePathSegment.js";
 import type {
   BlockSetInstallationJobRid as _api_BlockSetInstallationJobRid,
   DeleteJobDraftResponse as _api_DeleteJobDraftResponse,
@@ -36,5 +37,9 @@ export async function deleteJobDraft(
   ctx: ConjureContext,
   jobRid: _api_BlockSetInstallationJobRid,
 ): Promise<_api_DeleteJobDraftResponse> {
-  return conjureFetch(ctx, `/installation-job-draft/${jobRid}`, "DELETE");
+  return conjureFetch(
+    ctx,
+    `/installation-job-draft/${encodePathSegment(jobRid)}`,
+    "DELETE",
+  );
 }

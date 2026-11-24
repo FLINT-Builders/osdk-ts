@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../encodePathSegment.js";
 import type {
   BlockId as _api_BlockId,
   GetOwnedBlockVersionResponse as _api_GetOwnedBlockVersionResponse,
@@ -33,5 +34,9 @@ export async function getLatestOwnedBlockVersion(
   ctx: ConjureContext,
   blockId: _api_BlockId,
 ): Promise<_api_GetOwnedBlockVersionResponse | null | undefined> {
-  return conjureFetch(ctx, `/blocks/${blockId}/latest-owned`, "GET");
+  return conjureFetch(
+    ctx,
+    `/blocks/${encodePathSegment(blockId)}/latest-owned`,
+    "GET",
+  );
 }

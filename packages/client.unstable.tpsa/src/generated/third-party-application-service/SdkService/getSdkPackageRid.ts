@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../encodePathSegment.js";
 import type { ArtifactsRepositoryRid } from "../ArtifactsRepositoryRid.js";
 import type { PackageName } from "../PackageName.js";
 import type { SdkPackageRid } from "../SdkPackageRid.js";
@@ -34,5 +35,9 @@ export async function getSdkPackageRid(
   repositoryRid: ArtifactsRepositoryRid,
   packageName: PackageName,
 ): Promise<SdkPackageRid | undefined> {
-  return conjureFetch(ctx, `/sdks/${repositoryRid}/${packageName}/rid`, "GET");
+  return conjureFetch(
+    ctx,
+    `/sdks/${encodePathSegment(repositoryRid)}/${encodePathSegment(packageName)}/rid`,
+    "GET",
+  );
 }

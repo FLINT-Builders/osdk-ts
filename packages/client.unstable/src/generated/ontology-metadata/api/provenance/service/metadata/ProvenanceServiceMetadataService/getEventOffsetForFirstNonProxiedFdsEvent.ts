@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../../../../encodePathSegment.js";
 import type {
   GetEventOffsetForFirstNonProxiedFdsEventResponse as _api_provenance_GetEventOffsetForFirstNonProxiedFdsEventResponse,
   OmsOpsDependentType as _api_provenance_OmsOpsDependentType,
@@ -37,7 +38,7 @@ export async function getEventOffsetForFirstNonProxiedFdsEvent(
 ): Promise<_api_provenance_GetEventOffsetForFirstNonProxiedFdsEventResponse> {
   return conjureFetch(
     ctx,
-    `/provenance-service-metadata/get-event-offset-for-first-non-proxied-fds-event/${omsOpsDependentType}`,
+    `/provenance-service-metadata/get-event-offset-for-first-non-proxied-fds-event/${encodePathSegment(omsOpsDependentType)}`,
     "GET",
   );
 }

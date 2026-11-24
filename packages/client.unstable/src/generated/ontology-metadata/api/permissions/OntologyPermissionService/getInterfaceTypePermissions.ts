@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../../encodePathSegment.js";
 import type { InterfaceTypeRid as _api_InterfaceTypeRid } from "../../__components.js";
 import type { GetInterfaceTypePermissionsResponse as _api_permissions_GetInterfaceTypePermissionsResponse } from "../__components.js";
 
@@ -28,7 +29,7 @@ export async function getInterfaceTypePermissions(
 ): Promise<_api_permissions_GetInterfaceTypePermissionsResponse> {
   return conjureFetch(
     ctx,
-    `/permissions/interfaceType/${interfaceTypeRid}`,
+    `/permissions/interfaceType/${encodePathSegment(interfaceTypeRid)}`,
     "GET",
   );
 }

@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../encodePathSegment.js";
 import type {
   BlockSetId as _api_BlockSetId,
   IssueRecallRequest as _api_IssueRecallRequest,
@@ -35,7 +36,7 @@ export async function issueRecall(
 ): Promise<_api_IssueRecallResponse> {
   return conjureFetch(
     ctx,
-    `/automation/product/${marketplaceRid}/${blockSetId}/release/recall`,
+    `/automation/product/${encodePathSegment(marketplaceRid)}/${encodePathSegment(blockSetId)}/release/recall`,
     "POST",
     request,
   );

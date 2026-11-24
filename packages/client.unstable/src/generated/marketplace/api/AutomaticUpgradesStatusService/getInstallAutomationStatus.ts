@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../encodePathSegment.js";
 import type {
   BlockSetInstallationRid as _api_BlockSetInstallationRid,
   GetInstallAutomationStatusResponse as _api_GetInstallAutomationStatusResponse,
@@ -32,7 +33,7 @@ export async function getInstallAutomationStatus(
 ): Promise<_api_GetInstallAutomationStatusResponse> {
   return conjureFetch(
     ctx,
-    `/automation/status/block-set-installations/${blockSetInstallationRid}`,
+    `/automation/status/block-set-installations/${encodePathSegment(blockSetInstallationRid)}`,
     "GET",
   );
 }

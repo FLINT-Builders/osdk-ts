@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../../encodePathSegment.js";
 import type { ApolloEntityId as _api_ApolloEntityId } from "../../../api/__components.js";
 import type {
   ListInstallationsForEntityIdRequest as _installmanager_api_ListInstallationsForEntityIdRequest,
@@ -34,7 +35,7 @@ export async function listInstallationsForApolloEntityId(
 ): Promise<_installmanager_api_ListInstallationsForEntityIdResponse> {
   return conjureFetch(
     ctx,
-    `/install-manager/installations/entity-id/${apolloEntityId}/list`,
+    `/install-manager/installations/entity-id/${encodePathSegment(apolloEntityId)}/list`,
     "POST",
     request,
   );

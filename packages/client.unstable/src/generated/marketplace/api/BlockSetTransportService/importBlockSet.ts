@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../encodePathSegment.js";
 import type {
   ImportBlockSetResponse as _api_ImportBlockSetResponse,
   MarketplaceRid as _api_MarketplaceRid,
@@ -34,7 +35,7 @@ export async function importBlockSet(
 ): Promise<_api_ImportBlockSetResponse> {
   return conjureFetch(
     ctx,
-    `/block-set-transport/${marketplaceRid}/upload`,
+    `/block-set-transport/${encodePathSegment(marketplaceRid)}/upload`,
     "POST",
     request,
     undefined,

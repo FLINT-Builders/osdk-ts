@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../encodePathSegment.js";
 import type {
   AvailableModulesResponse as _AvailableModulesResponse,
   ModuleGroupName as _ModuleGroupName,
@@ -35,7 +36,7 @@ export async function getAvailableSparkModules(
 ): Promise<_AvailableModulesResponse> {
   return conjureFetch(
     ctx,
-    `/module-group/${moduleGroupName}/available-modules`,
+    `/module-group/${encodePathSegment(moduleGroupName)}/available-modules`,
     "GET",
   );
 }

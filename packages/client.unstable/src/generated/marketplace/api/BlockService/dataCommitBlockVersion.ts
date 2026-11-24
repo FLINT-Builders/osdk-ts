@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../encodePathSegment.js";
 import type { BlockVersionId as _api_BlockVersionId } from "../__components.js";
 
 /**
@@ -32,7 +33,7 @@ export async function dataCommitBlockVersion(
 ): Promise<void> {
   return conjureFetch(
     ctx,
-    `/blocks/versions/${blockVersionId}/commit-data`,
+    `/blocks/versions/${encodePathSegment(blockVersionId)}/commit-data`,
     "POST",
   );
 }

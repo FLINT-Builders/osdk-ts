@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../encodePathSegment.js";
 import type {
   CheckCanUploadToStoreResponse as _api_CheckCanUploadToStoreResponse,
   MarketplaceRid as _api_MarketplaceRid,
@@ -31,7 +32,7 @@ export async function checkCanUploadToStore(
 ): Promise<_api_CheckCanUploadToStoreResponse> {
   return conjureFetch(
     ctx,
-    `/block-set-transport/${marketplaceRid}/permission`,
+    `/block-set-transport/${encodePathSegment(marketplaceRid)}/permission`,
     "POST",
   );
 }

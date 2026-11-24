@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../../encodePathSegment.js";
 import type {
   GetStreamingTimeseriesTemplateInstancesRequest as _api_timeseries_GetStreamingTimeseriesTemplateInstancesRequest,
   GetStreamingTimeseriesTemplateInstancesResponse as _api_timeseries_GetStreamingTimeseriesTemplateInstancesResponse,
@@ -35,7 +36,7 @@ export async function getStreamingTimeseriesTemplateInstances(
 ): Promise<_api_timeseries_GetStreamingTimeseriesTemplateInstancesResponse> {
   return conjureFetch(
     ctx,
-    `/time-series/alert/v0/streaming/get-template-instances/${monitorGroupRid}`,
+    `/time-series/alert/v0/streaming/get-template-instances/${encodePathSegment(monitorGroupRid)}`,
     "POST",
     request,
   );

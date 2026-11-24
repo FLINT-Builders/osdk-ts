@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../../encodePathSegment.js";
 import type { OntologyBranchRid as _api_OntologyBranchRid } from "../../../api/__components.js";
 import type {
   SetOntologyBranchLockRequest as _branch_api_SetOntologyBranchLockRequest,
@@ -33,7 +34,7 @@ export async function setOntologyBranchLock(
 ): Promise<_branch_api_SetOntologyBranchLockResponse> {
   return conjureFetch(
     ctx,
-    `/ontology/branch/setLock/${ontologyBranchRid}`,
+    `/ontology/branch/setLock/${encodePathSegment(ontologyBranchRid)}`,
     "PUT",
     request,
   );

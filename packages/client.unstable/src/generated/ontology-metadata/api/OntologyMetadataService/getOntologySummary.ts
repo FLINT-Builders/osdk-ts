@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../encodePathSegment.js";
 import type {
   GetOntologySummaryRequest as _api_GetOntologySummaryRequest,
   GetOntologySummaryResponse as _api_GetOntologySummaryResponse,
@@ -39,7 +40,7 @@ export async function getOntologySummary(
 ): Promise<_api_GetOntologySummaryResponse> {
   return conjureFetch(
     ctx,
-    `/ontology/ontology/load/${ontologyRid}/summary`,
+    `/ontology/ontology/load/${encodePathSegment(ontologyRid)}/summary`,
     "POST",
     request,
   );

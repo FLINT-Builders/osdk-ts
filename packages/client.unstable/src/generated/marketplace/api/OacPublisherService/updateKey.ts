@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../encodePathSegment.js";
 import type {
   MarketplaceRid as _api_MarketplaceRid,
   UpdateKeyRequest as _api_UpdateKeyRequest,
@@ -33,7 +34,7 @@ export async function updateKey(
 ): Promise<_api_UpdateKeyResponse> {
   return conjureFetch(
     ctx,
-    `/oac-publisher/${marketplaceRid}/update-key`,
+    `/oac-publisher/${encodePathSegment(marketplaceRid)}/update-key`,
     "POST",
     request,
   );

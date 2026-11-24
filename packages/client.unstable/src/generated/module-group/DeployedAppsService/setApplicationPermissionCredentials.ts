@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../encodePathSegment.js";
 import type {
   ComputeModuleThirdParty as _ComputeModuleThirdParty,
   ComputeModuleThirdPartyRequest as _ComputeModuleThirdPartyRequest,
@@ -34,7 +35,7 @@ export async function setApplicationPermissionCredentials(
 ): Promise<_ComputeModuleThirdParty | null | undefined> {
   return conjureFetch(
     ctx,
-    `/deployed-apps/${deployedAppRid}/permissions`,
+    `/deployed-apps/${encodePathSegment(deployedAppRid)}/permissions`,
     "POST",
     request,
   );

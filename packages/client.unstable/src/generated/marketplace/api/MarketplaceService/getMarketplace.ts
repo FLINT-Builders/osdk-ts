@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../encodePathSegment.js";
 import type {
   Marketplace as _api_Marketplace,
   MarketplaceRid as _api_MarketplaceRid,
@@ -31,5 +32,9 @@ export async function getMarketplace(
   ctx: ConjureContext,
   marketplaceRid: _api_MarketplaceRid,
 ): Promise<_api_Marketplace> {
-  return conjureFetch(ctx, `/marketplaces/${marketplaceRid}`, "GET");
+  return conjureFetch(
+    ctx,
+    `/marketplaces/${encodePathSegment(marketplaceRid)}`,
+    "GET",
+  );
 }

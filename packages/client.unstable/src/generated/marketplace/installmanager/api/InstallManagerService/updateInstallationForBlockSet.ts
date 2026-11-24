@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../../encodePathSegment.js";
 import type {
   ManagedInstallationName as _api_ManagedInstallationName,
   NamespaceRid as _api_NamespaceRid,
@@ -36,7 +37,7 @@ export async function updateInstallationForBlockSet(
 ): Promise<_installmanager_api_UpdateInstallationResponse> {
   return conjureFetch(
     ctx,
-    `/install-manager/namespaces/${namespaceRid}/installations/${installationName}/block-set`,
+    `/install-manager/namespaces/${encodePathSegment(namespaceRid)}/installations/${encodePathSegment(installationName)}/block-set`,
     "PUT",
     request,
   );

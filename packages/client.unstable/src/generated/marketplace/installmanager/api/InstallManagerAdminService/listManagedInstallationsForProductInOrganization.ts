@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../../encodePathSegment.js";
 import type {
   MavenProductId as _api_MavenProductId,
   OrganizationRid as _api_OrganizationRid,
@@ -35,7 +36,7 @@ export async function listManagedInstallationsForProductInOrganization(
 ): Promise<_installmanager_api_ListManagedInstallationsForProductInOrganizationResponse> {
   return conjureFetch(
     ctx,
-    `/install-manager-admin/organization/${organizationRid}/product-id/${productId}/installations/list`,
+    `/install-manager-admin/organization/${encodePathSegment(organizationRid)}/product-id/${encodePathSegment(productId)}/installations/list`,
     "POST",
   );
 }

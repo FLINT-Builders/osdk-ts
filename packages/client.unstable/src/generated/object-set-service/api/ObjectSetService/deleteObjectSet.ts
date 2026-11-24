@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../encodePathSegment.js";
 import type { ObjectSetRid as _api_ObjectSetRid } from "../__components.js";
 
 /**
@@ -25,5 +26,9 @@ export async function deleteObjectSet(
   ctx: ConjureContext,
   objectSetRid: _api_ObjectSetRid,
 ): Promise<void> {
-  return conjureFetch(ctx, `/objectSets/${objectSetRid}`, "DELETE");
+  return conjureFetch(
+    ctx,
+    `/objectSets/${encodePathSegment(objectSetRid)}`,
+    "DELETE",
+  );
 }

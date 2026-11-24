@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../../encodePathSegment.js";
 import type { ActionTypeRid as _api_ActionTypeRid } from "../../__components.js";
 import type { GetActionTypePermissionsResponse as _api_permissions_GetActionTypePermissionsResponse } from "../__components.js";
 
@@ -26,5 +27,9 @@ export async function getActionTypePermissions(
   ctx: ConjureContext,
   actionTypeRid: _api_ActionTypeRid,
 ): Promise<_api_permissions_GetActionTypePermissionsResponse> {
-  return conjureFetch(ctx, `/permissions/actionType/${actionTypeRid}`, "GET");
+  return conjureFetch(
+    ctx,
+    `/permissions/actionType/${encodePathSegment(actionTypeRid)}`,
+    "GET",
+  );
 }

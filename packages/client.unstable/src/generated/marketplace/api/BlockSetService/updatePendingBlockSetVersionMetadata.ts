@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../encodePathSegment.js";
 import type {
   BlockSetVersionId as _api_BlockSetVersionId,
   UpdatePendingBlockSetVersionMetadataRequest as _api_UpdatePendingBlockSetVersionMetadataRequest,
@@ -42,7 +43,7 @@ export async function updatePendingBlockSetVersionMetadata(
 ): Promise<_api_UpdatePendingBlockSetVersionMetadataResponse> {
   return conjureFetch(
     ctx,
-    `/block-sets/v2/pending/version/${blockSetVersionId}/metadata`,
+    `/block-sets/v2/pending/version/${encodePathSegment(blockSetVersionId)}/metadata`,
     "PUT",
     request,
   );

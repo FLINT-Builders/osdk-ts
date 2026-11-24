@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../encodePathSegment.js";
 import type {
   GetManagedStoresSettingsForOrgResponse as _api_GetManagedStoresSettingsForOrgResponse,
   OrganizationRid as _api_OrganizationRid,
@@ -32,7 +33,7 @@ export async function getManagedStoresSettingsForOrg(
 ): Promise<_api_GetManagedStoresSettingsForOrgResponse> {
   return conjureFetch(
     ctx,
-    `/marketplaces/managedStoresSettings/${organizationRid}`,
+    `/marketplaces/managedStoresSettings/${encodePathSegment(organizationRid)}`,
     "GET",
   );
 }

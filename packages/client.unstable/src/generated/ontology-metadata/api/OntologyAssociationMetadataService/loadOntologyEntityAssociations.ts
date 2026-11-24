@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../encodePathSegment.js";
 import type { OntologyRid as _api_OntologyRid } from "../__components.js";
 import type {
   LoadOntologyEntityAssociationsRequest as _api_association_metadata_LoadOntologyEntityAssociationsRequest,
@@ -32,7 +33,7 @@ export async function loadOntologyEntityAssociations(
 ): Promise<_api_association_metadata_LoadOntologyEntityAssociationsResponse> {
   return conjureFetch(
     ctx,
-    `/association/ontology/${ontologyRid}/loadOntologyEntityAssociation`,
+    `/association/ontology/${encodePathSegment(ontologyRid)}/loadOntologyEntityAssociation`,
     "POST",
     request,
   );

@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../encodePathSegment.js";
 import type {
   BlockSetVersionDiff as _api_BlockSetVersionDiff,
   BlockSetVersionId as _api_BlockSetVersionId,
@@ -43,7 +44,7 @@ export async function getPendingBlockSetVersionDiff(
 ): Promise<_api_BlockSetVersionDiff> {
   return conjureFetch(
     ctx,
-    `/block-sets/v2/pending/version/${blockSetVersionId}/diff`,
+    `/block-sets/v2/pending/version/${encodePathSegment(blockSetVersionId)}/diff`,
     "GET",
   );
 }

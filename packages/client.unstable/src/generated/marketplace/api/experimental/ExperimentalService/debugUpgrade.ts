@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../../encodePathSegment.js";
 import type {
   BlockSetInstallationRid as _api_BlockSetInstallationRid,
   InstallBlockSetsRequest as _api_InstallBlockSetsRequest,
@@ -32,7 +33,7 @@ export async function debugUpgrade(
 ): Promise<_api_InstallBlockSetsRequest> {
   return conjureFetch(
     ctx,
-    `/experimental/installations/${installationRid}/upgrade/debug`,
+    `/experimental/installations/${encodePathSegment(installationRid)}/upgrade/debug`,
     "POST",
     request,
   );

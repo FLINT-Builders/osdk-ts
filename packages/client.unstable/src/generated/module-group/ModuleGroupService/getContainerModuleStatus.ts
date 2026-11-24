@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../encodePathSegment.js";
 import type {
   ModuleGroupName as _ModuleGroupName,
   ModuleId as _ModuleId,
@@ -32,7 +33,7 @@ export async function getContainerModuleStatus(
 ): Promise<_ModuleStatus> {
   return conjureFetch(
     ctx,
-    `/module-group/${moduleGroupName}/${moduleId}/container-module-status`,
+    `/module-group/${encodePathSegment(moduleGroupName)}/${encodePathSegment(moduleId)}/container-module-status`,
     "GET",
   );
 }

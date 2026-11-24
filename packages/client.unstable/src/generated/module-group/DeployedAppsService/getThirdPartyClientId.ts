@@ -15,9 +15,15 @@
  */
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
+
+import { encodePathSegment } from "../../../encodePathSegment.js";
 export async function getThirdPartyClientId(
   ctx: ConjureContext,
   deployedAppRid: string,
 ): Promise<string | null | undefined> {
-  return conjureFetch(ctx, `/deployed-apps/${deployedAppRid}/client-id`, "GET");
+  return conjureFetch(
+    ctx,
+    `/deployed-apps/${encodePathSegment(deployedAppRid)}/client-id`,
+    "GET",
+  );
 }

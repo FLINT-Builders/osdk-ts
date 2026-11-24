@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../encodePathSegment.js";
 import type { ValueTypeRid } from "../ValueTypeRid.js";
 
 /**
@@ -27,7 +28,7 @@ export async function deleteValueType(
 ): Promise<void> {
   return conjureFetch(
     ctx,
-    `/type-registry/value-types/${valueTypeRid}`,
+    `/type-registry/value-types/${encodePathSegment(valueTypeRid)}`,
     "DELETE",
   );
 }

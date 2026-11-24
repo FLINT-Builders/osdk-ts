@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../../encodePathSegment.js";
 import type {
   BranchRid as _api_BranchRid,
   MonitorRid as _api_MonitorRid,
@@ -32,7 +33,7 @@ export async function muteMonitorForSelf(
 ): Promise<_api_registry_MuteMonitorForSelfResponse> {
   return conjureFetch(
     ctx,
-    `/registry/v0/monitors-muteForSelf/${monitorRid}`,
+    `/registry/v0/monitors-muteForSelf/${encodePathSegment(monitorRid)}`,
     "GET",
     undefined,
     { branchRid },

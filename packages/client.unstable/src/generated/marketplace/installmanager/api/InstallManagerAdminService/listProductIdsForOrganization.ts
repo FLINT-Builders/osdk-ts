@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../../encodePathSegment.js";
 import type { OrganizationRid as _api_OrganizationRid } from "../../../api/__components.js";
 import type {
   ListProductIdsForOrganizationRequest as _installmanager_api_ListProductIdsForOrganizationRequest,
@@ -36,7 +37,7 @@ export async function listProductIdsForOrganization(
 ): Promise<_installmanager_api_ListProductIdsForOrganizationResponse> {
   return conjureFetch(
     ctx,
-    `/install-manager-admin/organization/${organizationRid}/product-ids/list`,
+    `/install-manager-admin/organization/${encodePathSegment(organizationRid)}/product-ids/list`,
     "POST",
     request,
   );

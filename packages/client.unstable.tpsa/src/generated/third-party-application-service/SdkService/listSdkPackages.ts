@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../encodePathSegment.js";
 import type { ArtifactsRepositoryRid } from "../ArtifactsRepositoryRid.js";
 import type { ListSdkPackagesResponse } from "../ListSdkPackagesResponse.js";
 import type { PageSize } from "../PageSize.js";
@@ -32,8 +33,14 @@ export async function listSdkPackages(
   pageSize: PageSize | undefined,
   pageToken: SdkPackagePageToken | undefined,
 ): Promise<ListSdkPackagesResponse> {
-  return conjureFetch(ctx, `/sdks/${repositoryRid}`, "GET", undefined, {
-    pageSize,
-    pageToken,
-  });
+  return conjureFetch(
+    ctx,
+    `/sdks/${encodePathSegment(repositoryRid)}`,
+    "GET",
+    undefined,
+    {
+      pageSize,
+      pageToken,
+    },
+  );
 }

@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../encodePathSegment.js";
 import type {
   BlockSetInstallationJobRid as _api_BlockSetInstallationJobRid,
   InstallBlockSetsResponse as _api_InstallBlockSetsResponse,
@@ -41,7 +42,7 @@ export async function retryJob(
 ): Promise<_api_InstallBlockSetsResponse> {
   return conjureFetch(
     ctx,
-    `/block-set-installation/jobs/${jobRid}/retry`,
+    `/block-set-installation/jobs/${encodePathSegment(jobRid)}/retry`,
     "POST",
   );
 }

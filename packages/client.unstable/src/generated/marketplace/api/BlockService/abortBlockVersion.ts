@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../encodePathSegment.js";
 import type { BlockVersionId as _api_BlockVersionId } from "../__components.js";
 
 /**
@@ -28,5 +29,9 @@ export async function abortBlockVersion(
   ctx: ConjureContext,
   blockVersionId: _api_BlockVersionId,
 ): Promise<void> {
-  return conjureFetch(ctx, `/blocks/versions/${blockVersionId}/abort`, "POST");
+  return conjureFetch(
+    ctx,
+    `/blocks/versions/${encodePathSegment(blockVersionId)}/abort`,
+    "POST",
+  );
 }

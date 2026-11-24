@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../encodePathSegment.js";
 import type { OntologyRid as _api_OntologyRid } from "../__components.js";
 import type { GetGothamObjectTypesResponse as _api_typemapping_GetGothamObjectTypesResponse } from "../typemapping/__components.js";
 
@@ -32,7 +33,7 @@ export async function getGothamObjectTypes(
 ): Promise<_api_typemapping_GetGothamObjectTypesResponse> {
   return conjureFetch(
     ctx,
-    `/ontology/typemapping/getGothamObjectTypes/${ontologyRid}`,
+    `/ontology/typemapping/getGothamObjectTypes/${encodePathSegment(ontologyRid)}`,
     "GET",
   );
 }

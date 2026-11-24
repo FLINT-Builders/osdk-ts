@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../encodePathSegment.js";
 import type {
   BlockSetVersionId as _api_BlockSetVersionId,
   GetInstallableBlockSetVersionResponse as _api_GetInstallableBlockSetVersionResponse,
@@ -33,7 +34,7 @@ export async function getInstallableBlockSetVersion(
 ): Promise<_api_GetInstallableBlockSetVersionResponse> {
   return conjureFetch(
     ctx,
-    `/installation-app-service/installable/${marketplaceRid}/blockSet/version/${blockSetVersionId}`,
+    `/installation-app-service/installable/${encodePathSegment(marketplaceRid)}/blockSet/version/${encodePathSegment(blockSetVersionId)}`,
     "GET",
     undefined,
     { onlyLoadMetadata },

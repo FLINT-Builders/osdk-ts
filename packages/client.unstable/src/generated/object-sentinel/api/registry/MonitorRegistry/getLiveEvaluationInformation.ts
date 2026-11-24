@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../../encodePathSegment.js";
 import type { ObjectSetRid as _api_ObjectSetRid } from "../../__components.js";
 import type { LiveEvaluationInformationResponse as _api_registry_LiveEvaluationInformationResponse } from "../__components.js";
 
@@ -28,7 +29,7 @@ export async function getLiveEvaluationInformation(
 ): Promise<_api_registry_LiveEvaluationInformationResponse> {
   return conjureFetch(
     ctx,
-    `/registry/v0/monitors-getLiveEvaluationInformation/${objectSetRid}`,
+    `/registry/v0/monitors-getLiveEvaluationInformation/${encodePathSegment(objectSetRid)}`,
     "GET",
   );
 }

@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../../encodePathSegment.js";
 import type { OrganizationRid as _api_OrganizationRid } from "../../__components.js";
 import type {
   GetUsageSettingsByOrganizationRequest as _api_usage_GetUsageSettingsByOrganizationRequest,
@@ -35,7 +36,7 @@ export async function getUsageSettingsByOrganization(
 ): Promise<_api_usage_GetUsageSettingsByOrganizationResponse> {
   return conjureFetch(
     ctx,
-    `/usage/getSettings/organization/${organizationRid}`,
+    `/usage/getSettings/organization/${encodePathSegment(organizationRid)}`,
     "POST",
     request,
   );

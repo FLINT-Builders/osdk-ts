@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../../encodePathSegment.js";
 import type { OntologyRid as _api_OntologyRid } from "../../__components.js";
 import type {
   GetModificationHistoryRequest as _api_modification_GetModificationHistoryRequest,
@@ -34,7 +35,7 @@ export async function getModificationHistory(
 ): Promise<_api_modification_GetModificationHistoryResponse> {
   return conjureFetch(
     ctx,
-    `/ontology/v2/${ontologyRid}/modification/history`,
+    `/ontology/v2/${encodePathSegment(ontologyRid)}/modification/history`,
     "POST",
     request,
   );

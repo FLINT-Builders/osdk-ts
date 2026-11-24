@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../../encodePathSegment.js";
 import type { OntologyRid as _api_OntologyRid } from "../../../api/__components.js";
 import type {
   CreateOntologyBranchRequest as _approvals_api_CreateOntologyBranchRequest,
@@ -35,7 +36,7 @@ export async function createBranch(
 ): Promise<_approvals_api_CreateOntologyBranchResponse> {
   return conjureFetch(
     ctx,
-    `/ontology/approvals/experimental/${ontologyRid}/createBranch`,
+    `/ontology/approvals/experimental/${encodePathSegment(ontologyRid)}/createBranch`,
     "POST",
     request,
   );

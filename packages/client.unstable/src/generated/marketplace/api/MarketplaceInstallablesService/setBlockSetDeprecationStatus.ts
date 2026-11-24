@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../encodePathSegment.js";
 import type {
   BlockSetVersionId as _api_BlockSetVersionId,
   DeprecationStatus as _api_DeprecationStatus,
@@ -33,7 +34,7 @@ export async function setBlockSetDeprecationStatus(
 ): Promise<void> {
   return conjureFetch(
     ctx,
-    `/installation-app-service/installable/${marketplaceRid}/blockSet/version/${blockSetVersionId}/deprecationStatus`,
+    `/installation-app-service/installable/${encodePathSegment(marketplaceRid)}/blockSet/version/${encodePathSegment(blockSetVersionId)}/deprecationStatus`,
     "POST",
     deprecationStatus,
   );

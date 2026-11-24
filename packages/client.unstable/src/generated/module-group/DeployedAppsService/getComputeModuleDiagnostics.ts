@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../encodePathSegment.js";
 import type { ModuleStatus as _ModuleStatus } from "../__components.js";
 
 /**
@@ -29,7 +30,7 @@ export async function getComputeModuleDiagnostics(
 ): Promise<_ModuleStatus> {
   return conjureFetch(
     ctx,
-    `/deployed-apps/${compassRid}/${branch}/${moduleId}/diagnostics`,
+    `/deployed-apps/${encodePathSegment(compassRid)}/${encodePathSegment(branch)}/${encodePathSegment(moduleId)}/diagnostics`,
     "GET",
   );
 }

@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../../encodePathSegment.js";
 import type { OntologyRid as _api_OntologyRid } from "../../__components.js";
 import type {
   CheckExistingUniqueIdentifiersRequest as _api_modification_CheckExistingUniqueIdentifiersRequest,
@@ -35,7 +36,7 @@ export async function checkExistingUniqueIdentifiers(
 ): Promise<_api_modification_CheckExistingUniqueIdentifiersResponse> {
   return conjureFetch(
     ctx,
-    `/ontology/v2/${ontologyRid}/modification/check-uniqueness`,
+    `/ontology/v2/${encodePathSegment(ontologyRid)}/modification/check-uniqueness`,
     "POST",
     request,
   );

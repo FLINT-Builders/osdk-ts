@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../../encodePathSegment.js";
 import type {
   BranchRid as _api_BranchRid,
   MonitorRid as _api_MonitorRid,
@@ -37,7 +38,7 @@ export async function getMonitorVersion(
 ): Promise<_api_registry_GetMonitorVersionResponse> {
   return conjureFetch(
     ctx,
-    `/registry/v0/monitors/${monitorRid}/versions/${monitorVersion}`,
+    `/registry/v0/monitors/${encodePathSegment(monitorRid)}/versions/${encodePathSegment(monitorVersion)}`,
     "GET",
     undefined,
     { branchRid },

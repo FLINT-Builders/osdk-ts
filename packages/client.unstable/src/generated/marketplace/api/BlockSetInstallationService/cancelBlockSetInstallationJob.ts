@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../encodePathSegment.js";
 import type { BlockSetInstallationJobRid as _api_BlockSetInstallationJobRid } from "../__components.js";
 
 /**
@@ -27,7 +28,7 @@ export async function cancelBlockSetInstallationJob(
 ): Promise<void> {
   return conjureFetch(
     ctx,
-    `/block-set-installation/cancel-jobs/${jobRid}`,
+    `/block-set-installation/cancel-jobs/${encodePathSegment(jobRid)}`,
     "POST",
   );
 }

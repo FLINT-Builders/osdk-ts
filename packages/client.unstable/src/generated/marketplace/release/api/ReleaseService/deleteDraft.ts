@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../../encodePathSegment.js";
 import type {
   CompassProjectRid as _api_CompassProjectRid,
   ReleaseRid as _api_ReleaseRid,
@@ -42,7 +43,7 @@ export async function deleteDraft(
 ): Promise<_release_api_DeleteDraftResponse> {
   return conjureFetch(
     ctx,
-    `/releases/delete/${releaseRid}`,
+    `/releases/delete/${encodePathSegment(releaseRid)}`,
     "DELETE",
     request,
     { compassProjectRid },

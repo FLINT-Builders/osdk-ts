@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../encodePathSegment.js";
 import type {
   BlockSetInstallationRid as _api_BlockSetInstallationRid,
   BlockSetVersionId as _api_BlockSetVersionId,
@@ -38,7 +39,7 @@ export async function previewCleanupUnusedShapes(
 ): Promise<_api_PreviewCleanupUnusedShapesResponse> {
   return conjureFetch(
     ctx,
-    `/block-set-installation/${blockSetInstallationRid}/cleanup-unused-shapes/preview/${targetVersionId}`,
+    `/block-set-installation/${encodePathSegment(blockSetInstallationRid)}/cleanup-unused-shapes/preview/${encodePathSegment(targetVersionId)}`,
     "GET",
   );
 }

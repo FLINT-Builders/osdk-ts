@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../../encodePathSegment.js";
 import type { MonitorRid as _api_MonitorRid } from "../../__components.js";
 import type {
   UpdateTimeseriesJobConfigurationRequest as _api_registry_UpdateTimeseriesJobConfigurationRequest,
@@ -32,7 +33,7 @@ export async function updateTimeseriesJobConfiguration(
 ): Promise<_api_registry_UpdateTimeseriesJobConfigurationResponse> {
   return conjureFetch(
     ctx,
-    `/registry/v0/update-timeseries-job-configuration/${monitorRid}`,
+    `/registry/v0/update-timeseries-job-configuration/${encodePathSegment(monitorRid)}`,
     "POST",
     request,
   );

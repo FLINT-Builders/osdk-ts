@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../encodePathSegment.js";
 import type {
   BlockSetInstallationRid as _api_BlockSetInstallationRid,
   SetBlockSetInstallationImmutabilityRequest as _api_SetBlockSetInstallationImmutabilityRequest,
@@ -48,7 +49,7 @@ export async function setBlockSetInstallationImmutability(
 ): Promise<_api_SetBlockSetInstallationImmutabilityResponse> {
   return conjureFetch(
     ctx,
-    `/block-installation/v2/block-set-installations/${blockSetInstallationRid}/set-immutability`,
+    `/block-installation/v2/block-set-installations/${encodePathSegment(blockSetInstallationRid)}/set-immutability`,
     "POST",
     request,
   );

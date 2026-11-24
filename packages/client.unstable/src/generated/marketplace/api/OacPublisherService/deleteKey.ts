@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../encodePathSegment.js";
 import type {
   DeleteKeyRequest as _api_DeleteKeyRequest,
   DeleteKeyResponse as _api_DeleteKeyResponse,
@@ -33,7 +34,7 @@ export async function deleteKey(
 ): Promise<_api_DeleteKeyResponse> {
   return conjureFetch(
     ctx,
-    `/oac-publisher/${marketplaceRid}/delete-key`,
+    `/oac-publisher/${encodePathSegment(marketplaceRid)}/delete-key`,
     "DELETE",
     request,
   );

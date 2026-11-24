@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../encodePathSegment.js";
 import type { ApplicationWebsite } from "../ApplicationWebsite.js";
 import type { StemmaRepositoryRid } from "../StemmaRepositoryRid.js";
 
@@ -31,7 +32,7 @@ export async function getWebsitesForCodeRepository(
 ): Promise<Array<ApplicationWebsite>> {
   return conjureFetch(
     ctx,
-    `/application-websites/for-code-repository/${codeRepositoryRid}`,
+    `/application-websites/for-code-repository/${encodePathSegment(codeRepositoryRid)}`,
     "GET",
   );
 }

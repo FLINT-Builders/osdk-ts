@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../encodePathSegment.js";
 import type {
   BatchGetApolloBlockSetVersionPublishingStatusRequest as _api_BatchGetApolloBlockSetVersionPublishingStatusRequest,
   BatchGetApolloBlockSetVersionPublishingStatusResponse as _api_BatchGetApolloBlockSetVersionPublishingStatusResponse,
@@ -33,7 +34,7 @@ export async function batchGetApolloBlockSetVersionPublishingStatus(
 ): Promise<_api_BatchGetApolloBlockSetVersionPublishingStatusResponse> {
   return conjureFetch(
     ctx,
-    `/apollo-publisher/${marketplaceRid}/batch/block-set-publishing-status`,
+    `/apollo-publisher/${encodePathSegment(marketplaceRid)}/batch/block-set-publishing-status`,
     "POST",
     request,
   );

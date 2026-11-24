@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../encodePathSegment.js";
 import type {
   BlockSetInstallationJobRid as _api_BlockSetInstallationJobRid,
   GetUnresolvedJobDraftResponse as _api_GetUnresolvedJobDraftResponse,
@@ -34,7 +35,7 @@ export async function getUnresolvedJobDraft(
 ): Promise<_api_GetUnresolvedJobDraftResponse> {
   return conjureFetch(
     ctx,
-    `/installation-job-draft/${jobRid}/unresolved`,
+    `/installation-job-draft/${encodePathSegment(jobRid)}/unresolved`,
     "GET",
   );
 }

@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../encodePathSegment.js";
 import type { CreateValueTypeVersionRequest } from "../CreateValueTypeVersionRequest.js";
 import type { CreateValueTypeVersionResponse } from "../CreateValueTypeVersionResponse.js";
 import type { ValueTypeRid } from "../ValueTypeRid.js";
@@ -30,7 +31,7 @@ export async function createValueTypeVersion(
 ): Promise<CreateValueTypeVersionResponse> {
   return conjureFetch(
     ctx,
-    `/type-registry/value-types/version/${valueTypeRid}`,
+    `/type-registry/value-types/version/${encodePathSegment(valueTypeRid)}`,
     "POST",
     request,
   );

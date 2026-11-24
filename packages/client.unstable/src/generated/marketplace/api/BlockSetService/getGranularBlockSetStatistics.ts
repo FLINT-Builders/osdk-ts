@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../encodePathSegment.js";
 import type {
   BlockSetVersionId as _api_BlockSetVersionId,
   GetGranularBlockSetStatisticsResponse as _api_GetGranularBlockSetStatisticsResponse,
@@ -36,7 +37,7 @@ export async function getGranularBlockSetStatistics(
 ): Promise<_api_GetGranularBlockSetStatisticsResponse> {
   return conjureFetch(
     ctx,
-    `/block-sets/version/${blockSetVersionId}/granular-statistics`,
+    `/block-sets/version/${encodePathSegment(blockSetVersionId)}/granular-statistics`,
     "GET",
   );
 }

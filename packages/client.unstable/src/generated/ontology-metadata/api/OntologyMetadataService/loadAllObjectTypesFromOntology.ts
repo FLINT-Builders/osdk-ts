@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../encodePathSegment.js";
 import type {
   LoadAllObjectTypesPageRequest as _api_LoadAllObjectTypesPageRequest,
   LoadAllObjectTypesPageResponse as _api_LoadAllObjectTypesPageResponse,
@@ -35,7 +36,7 @@ export async function loadAllObjectTypesFromOntology(
 ): Promise<_api_LoadAllObjectTypesPageResponse> {
   return conjureFetch(
     ctx,
-    `/ontology/ontology/load/${ontologyRid}/${ontologyVersion}/loadAllObjectTypes`,
+    `/ontology/ontology/load/${encodePathSegment(ontologyRid)}/${encodePathSegment(ontologyVersion)}/loadAllObjectTypes`,
     "POST",
     request,
   );

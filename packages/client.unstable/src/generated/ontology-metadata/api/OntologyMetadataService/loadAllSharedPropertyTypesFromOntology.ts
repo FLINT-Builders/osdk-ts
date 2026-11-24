@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../encodePathSegment.js";
 import type {
   LoadAllSharedPropertyTypesPageRequest as _api_LoadAllSharedPropertyTypesPageRequest,
   LoadAllSharedPropertyTypesPageResponse as _api_LoadAllSharedPropertyTypesPageResponse,
@@ -35,7 +36,7 @@ export async function loadAllSharedPropertyTypesFromOntology(
 ): Promise<_api_LoadAllSharedPropertyTypesPageResponse> {
   return conjureFetch(
     ctx,
-    `/ontology/ontology/load/${ontologyRid}/${ontologyVersion}/loadAllSharedPropertyTypes`,
+    `/ontology/ontology/load/${encodePathSegment(ontologyRid)}/${encodePathSegment(ontologyVersion)}/loadAllSharedPropertyTypes`,
     "PUT",
     request,
   );

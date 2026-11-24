@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../encodePathSegment.js";
 import type {
   ManagedMarketplaceId as _api_ManagedMarketplaceId,
   ManagedStoreResponseEntry as _api_ManagedStoreResponseEntry,
@@ -33,7 +34,7 @@ export async function getManagedStore(
 ): Promise<_api_ManagedStoreResponseEntry> {
   return conjureFetch(
     ctx,
-    `/marketplaces/managedStores/${managedMarketplaceId}`,
+    `/marketplaces/managedStores/${encodePathSegment(managedMarketplaceId)}`,
     "GET",
   );
 }

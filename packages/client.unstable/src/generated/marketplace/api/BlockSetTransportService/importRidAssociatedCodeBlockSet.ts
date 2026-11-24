@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../encodePathSegment.js";
 import type {
   BulkImportBlockSetsResponse as _api_BulkImportBlockSetsResponse,
   CodeBlockSetParentRid as _api_CodeBlockSetParentRid,
@@ -34,7 +35,7 @@ export async function importRidAssociatedCodeBlockSet(
 ): Promise<_api_BulkImportBlockSetsResponse> {
   return conjureFetch(
     ctx,
-    `/block-set-transport/${marketplaceRid}/upload/asCode/${parentRid}`,
+    `/block-set-transport/${encodePathSegment(marketplaceRid)}/upload/asCode/${encodePathSegment(parentRid)}`,
     "POST",
     request,
     undefined,

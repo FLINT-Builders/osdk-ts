@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../encodePathSegment.js";
 import type {
   BlockSetInstallationMetadata as _api_BlockSetInstallationMetadata,
   BlockSetInstallationRid as _api_BlockSetInstallationRid,
@@ -34,7 +35,7 @@ export async function getBlockSetInstallationMetadata(
 ): Promise<_api_BlockSetInstallationMetadata> {
   return conjureFetch(
     ctx,
-    `/block-set-installation/metadata/${blockSetInstallationRid}`,
+    `/block-set-installation/metadata/${encodePathSegment(blockSetInstallationRid)}`,
     "GET",
   );
 }

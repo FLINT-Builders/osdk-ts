@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../../encodePathSegment.js";
 import type {
   CompassProjectRid as _api_CompassProjectRid,
   ReleaseRid as _api_ReleaseRid,
@@ -44,7 +45,7 @@ export async function updateDraft(
 ): Promise<_release_api_UpdateDraftResponse> {
   return conjureFetch(
     ctx,
-    `/releases/update/${releaseRid}/update-draft`,
+    `/releases/update/${encodePathSegment(releaseRid)}/update-draft`,
     "POST",
     request,
     { compassProject },

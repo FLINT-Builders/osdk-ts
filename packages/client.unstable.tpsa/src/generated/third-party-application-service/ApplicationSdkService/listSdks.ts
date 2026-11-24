@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../encodePathSegment.js";
 import type { ApplicationRid } from "../ApplicationRid.js";
 import type { ApplicationSdkPageToken } from "../ApplicationSdkPageToken.js";
 import type { ListApplicationSdksResponse } from "../ListApplicationSdksResponse.js";
@@ -34,7 +35,7 @@ export async function listSdks(
 ): Promise<ListApplicationSdksResponse> {
   return conjureFetch(
     ctx,
-    `/application-sdks/${applicationRid}`,
+    `/application-sdks/${encodePathSegment(applicationRid)}`,
     "GET",
     undefined,
     { pageSize, pageToken },

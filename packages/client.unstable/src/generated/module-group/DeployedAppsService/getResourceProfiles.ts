@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../encodePathSegment.js";
 import type { ResourceProfile as _ResourceProfile } from "../__components.js";
 
 /**
@@ -29,7 +30,7 @@ export async function getResourceProfiles(
 ): Promise<Array<_ResourceProfile>> {
   return conjureFetch(
     ctx,
-    `/deployed-apps/${deployedAppRid}/resource-profiles`,
+    `/deployed-apps/${encodePathSegment(deployedAppRid)}/resource-profiles`,
     "GET",
   );
 }

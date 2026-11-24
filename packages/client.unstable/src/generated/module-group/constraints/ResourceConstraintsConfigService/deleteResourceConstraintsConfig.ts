@@ -16,6 +16,7 @@
 
 import { type ConjureContext, conjureFetch } from "conjure-lite";
 
+import { encodePathSegment } from "../../../../encodePathSegment.js";
 import type {
   CompassRid as _constraints_CompassRid,
   ModuleGroupProducer as _constraints_ModuleGroupProducer,
@@ -31,7 +32,7 @@ export async function deleteResourceConstraintsConfig(
 ): Promise<void> {
   return conjureFetch(
     ctx,
-    `/resource-constraints/${moduleGroupProducer}/${compassRid}`,
+    `/resource-constraints/${encodePathSegment(moduleGroupProducer)}/${encodePathSegment(compassRid)}`,
     "DELETE",
   );
 }
