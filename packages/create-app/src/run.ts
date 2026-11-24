@@ -34,6 +34,27 @@ import { generateNpmRc } from "./generate/generateNpmRc.js";
 import { green } from "./highlight.js";
 import type { SdkVersion, Template, TemplateContext } from "./templates.js";
 
+const BRANCH_SYNC_SCRIPT = "branch:sync";
+
+const EXACT_SEMVER =
+  /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/u;
+
+/**
+ * The exact `@osdk/cli` version released alongside this package, inlined at
+ * build time. Generated apps must not resolve the CLI through a dist-tag or
+ * range, because whatever resolves is executed with the developer's
+ * environment.
+ */
+function getCliVersion(): string {
+  const cliVersion = process.env.PACKAGE_CLI_VERSION;
+  if (cliVersion == null || !EXACT_SEMVER.test(cliVersion)) {
+    throw new Error(
+      `Could not determine an exact @osdk/cli version (got ${JSON.stringify(cliVersion)})`,
+    );
+  }
+  return cliVersion;
+}
+
 interface RunArgs {
   project: string;
   overwrite: boolean;
@@ -190,16 +211,20 @@ export async function run({
   };
   processFiles(root);
 
-  if (unstableFeatures && osdkPackage != null) {
+  const useBranchSync = unstableFeatures && osdkPackage != null;
+  if (useBranchSync) {
+    const cliVersion = getCliVersion();
     const packageJsonPath = path.join(root, "package.json");
     const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf-8"));
+    // Never wire the CLI into an install lifecycle script: the setup steps put
+    // FOUNDRY_TOKEN in the environment before `npm install`.
     packageJson.scripts = {
       ...packageJson.scripts,
-      postinstall: "./node_modules/.bin/osdk unstable branch sync",
+      [BRANCH_SYNC_SCRIPT]: "osdk unstable branch sync",
     };
     packageJson.devDependencies = {
-      "@osdk/cli": "latest",
       ...packageJson.devDependencies,
+      "@osdk/cli": cliVersion,
     };
     if (fs.existsSync(path.join(root, "vite.config.ts"))) {
       packageJson.dependencies = {
@@ -257,6 +282,7 @@ export async function run({
       `  \`cd ${cdRelative}\`\n` +
       `  \`export FOUNDRY_TOKEN=<token>\`\n` +
       `  \`npm install\`\n` +
+      (useBranchSync ? `  \`npm run ${BRANCH_SYNC_SCRIPT}\`\n` : "") +
       `  \`npm run dev\``,
     style: {
       padding: 2,

@@ -296,9 +296,13 @@ describe("--unstableFeatures flag", () => {
     await cli(argsFor(project, ["--unstableFeatures", "true"]));
     const { packageJson, viteConfigTs } = readProject(project);
 
-    const postinstall = "./node_modules/.bin/osdk unstable branch sync";
-    expect(packageJson.scripts.postinstall).toBe(postinstall);
-    expect(packageJson.devDependencies["@osdk/cli"]).toBe("latest");
+    expect(packageJson.scripts.postinstall).toBeUndefined();
+    expect(packageJson.scripts["branch:sync"]).toBe(
+      "osdk unstable branch sync",
+    );
+    expect(packageJson.devDependencies["@osdk/cli"]).toBe(
+      process.env.PACKAGE_CLI_VERSION,
+    );
     expect(packageJson.dependencies["@osdk/vite-plugin-branch"]).toBe(
       `^${createAppVersion}`,
     );
@@ -314,6 +318,7 @@ describe("--unstableFeatures flag", () => {
     const { packageJson, viteConfigTs } = readProject(project);
 
     expect(packageJson.scripts.postinstall).toBeUndefined();
+    expect(packageJson.scripts["branch:sync"]).toBeUndefined();
     expect(packageJson.devDependencies?.["@osdk/cli"]).toBeUndefined();
     expect(
       packageJson.dependencies["@osdk/vite-plugin-branch"],
@@ -336,10 +341,13 @@ describe("--unstableFeatures flag", () => {
       "utf-8",
     );
 
-    expect(packageJson.scripts.postinstall).toBe(
-      "./node_modules/.bin/osdk unstable branch sync",
+    expect(packageJson.scripts.postinstall).toBeUndefined();
+    expect(packageJson.scripts["branch:sync"]).toBe(
+      "osdk unstable branch sync",
     );
-    expect(packageJson.devDependencies["@osdk/cli"]).toBe("latest");
+    expect(packageJson.devDependencies["@osdk/cli"]).toBe(
+      process.env.PACKAGE_CLI_VERSION,
+    );
     expect(
       packageJson.dependencies["@osdk/vite-plugin-branch"],
     ).toBeUndefined();
