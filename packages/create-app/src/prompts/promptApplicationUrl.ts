@@ -16,6 +16,7 @@
 
 import { consola } from "../consola.js";
 import { italic } from "../highlight.js";
+import { parseApplicationUrl } from "../validation.js";
 
 export async function promptApplicationUrl({
   skipApplicationUrl,
@@ -49,7 +50,9 @@ export async function promptApplicationUrl({
     }
   }
 
-  while (applicationUrl == null || !/^https?:\/\//u.test(applicationUrl)) {
+  let parsed =
+    applicationUrl != null ? parseApplicationUrl(applicationUrl) : undefined;
+  while (parsed == null) {
     if (applicationUrl != null) {
       consola.fail("Please enter a valid application URL");
     }
@@ -59,6 +62,7 @@ export async function promptApplicationUrl({
       )}`,
       { type: "text" },
     );
+    parsed = parseApplicationUrl(applicationUrl);
   }
-  return applicationUrl.replace(/\/$/u, "");
+  return parsed;
 }

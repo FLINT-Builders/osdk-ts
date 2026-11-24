@@ -16,18 +16,14 @@
 
 import { consola } from "../consola.js";
 import { italic } from "../highlight.js";
+import { APPLICATION_RID_REGEX } from "../validation.js";
 
 export async function promptApplicationRid({
   application,
 }: {
   application?: string;
 }): Promise<string> {
-  while (
-    application == null ||
-    !/^ri\.third-party-applications\.[^.]+\.application\.[^.]+$/u.test(
-      application,
-    )
-  ) {
+  while (application == null || !APPLICATION_RID_REGEX.test(application)) {
     if (application != null) {
       consola.fail(
         "Please enter a valid application resource identifier (rid)",

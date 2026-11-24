@@ -17,6 +17,7 @@
 import { consola } from "../consola.js";
 import { italic } from "../highlight.js";
 import type { SdkVersion } from "../templates.js";
+import { ONTOLOGY_RID_REGEX, OSDK_REGISTRY_URL_REGEX } from "../validation.js";
 
 export async function promptOntologyAndOsdkPackageAndOsdkRegistryUrl({
   ontology,
@@ -64,10 +65,7 @@ export async function promptOntologyAndOsdkPackageAndOsdkRegistryUrl({
     }
   }
 
-  while (
-    ontology == null ||
-    !/^ri\.ontology\.[^.]+\.ontology\.[^.]+$/u.test(ontology)
-  ) {
+  while (ontology == null || !ONTOLOGY_RID_REGEX.test(ontology)) {
     if (ontology != null) {
       consola.fail("Please enter a valid Ontology resource identifier (rid)");
     }
@@ -93,9 +91,7 @@ export async function promptOntologyAndOsdkPackageAndOsdkRegistryUrl({
 
   while (
     osdkRegistryUrl == null ||
-    !/^https:\/\/[^/]+\/artifacts\/api\/repositories\/ri\.artifacts\.[^/]+\/contents\/release\/npm\/?$/u.test(
-      osdkRegistryUrl,
-    )
+    !OSDK_REGISTRY_URL_REGEX.test(osdkRegistryUrl)
   ) {
     if (osdkRegistryUrl != null) {
       consola.fail(
