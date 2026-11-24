@@ -554,6 +554,109 @@ describe("untrusted ontology metadata code generation", () => {
     assertImportDoesNotRunProbe(dir, marker);
   });
 
+  it("does not execute a __type expression supplied as an object set parameter api name", () => {
+    vi.useRealTimers();
+    const marker = probeKey("ObjectSetParameter");
+    const dir = outputDirFor("object-set-parameter");
+    generate(
+      baseAction({
+        parameters: {
+          employees: {
+            displayName: "Employees",
+            description: "Employees",
+            dataType: {
+              type: "objectSet",
+              objectTypeApiName: nestedType(marker),
+            },
+            required: true,
+            typeClasses: [],
+          },
+        },
+      }),
+      dir,
+    );
+    assertImportDoesNotRunProbe(dir, marker);
+  });
+
+  it("does not execute a __type expression supplied as an interface parameter api name", () => {
+    vi.useRealTimers();
+    const marker = probeKey("InterfaceParameter");
+    const dir = outputDirFor("interface-parameter");
+    generate(
+      baseAction({
+        parameters: {
+          person: {
+            displayName: "Person",
+            description: "Person",
+            dataType: {
+              type: "interfaceObject",
+              interfaceTypeApiName: nestedType(marker),
+            },
+            required: true,
+            typeClasses: [],
+          },
+        },
+      }),
+      dir,
+    );
+    assertImportDoesNotRunProbe(dir, marker);
+  });
+
+  it("does not execute a __type expression supplied as an object list parameter api name", () => {
+    vi.useRealTimers();
+    const marker = probeKey("ObjectListParameter");
+    const dir = outputDirFor("object-list-parameter");
+    generate(
+      baseAction({
+        parameters: {
+          employees: {
+            displayName: "Employees",
+            description: "Employees",
+            dataType: {
+              type: "array",
+              subType: {
+                type: "object",
+                objectTypeApiName: nestedType(marker),
+                objectApiName: "Employee",
+              },
+            },
+            required: true,
+            typeClasses: [],
+          },
+        },
+      }),
+      dir,
+    );
+    assertImportDoesNotRunProbe(dir, marker);
+  });
+
+  it("does not execute a __type expression supplied as an interface list parameter api name", () => {
+    vi.useRealTimers();
+    const marker = probeKey("InterfaceListParameter");
+    const dir = outputDirFor("interface-list-parameter");
+    generate(
+      baseAction({
+        parameters: {
+          people: {
+            displayName: "People",
+            description: "People",
+            dataType: {
+              type: "array",
+              subType: {
+                type: "interfaceObject",
+                interfaceTypeApiName: nestedType(marker),
+              },
+            },
+            required: true,
+            typeClasses: [],
+          },
+        },
+      }),
+      dir,
+    );
+    assertImportDoesNotRunProbe(dir, marker);
+  });
+
   it("does not execute a __type expression supplied as a struct field object api name", () => {
     vi.useRealTimers();
     const marker = probeKey("StructField");
