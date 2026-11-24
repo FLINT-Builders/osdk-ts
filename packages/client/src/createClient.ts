@@ -105,6 +105,20 @@ class QueryInvoker<
   executeFunction: (...args: any[]) => any;
 }
 
+// Resource identifier locators only use these characters, so anything else
+// (e.g. "/", "\", "?", "#", "%") cannot be part of a real ontology RID.
+const ONTOLOGY_RID_PATTERN = /^ri\.[A-Za-z0-9._-]+$/u;
+
+function assertValidOntologyRid(ontologyRid: unknown): string {
+  if (
+    typeof ontologyRid !== "string" ||
+    !ONTOLOGY_RID_PATTERN.test(ontologyRid)
+  ) {
+    throw new Error("Invalid ontology RID");
+  }
+  return ontologyRid;
+}
+
 /** @internal */
 export function createClientInternal(
   objectSetFactory: ObjectSetFactory<any, any>,
@@ -124,22 +138,18 @@ export function createClientInternal(
     | undefined = undefined,
   fetchFn: typeof globalThis.fetch = fetch,
 ): Client {
-  if (typeof ontologyRid === "string") {
-    if (!ontologyRid.startsWith("ri.")) {
-      throw new Error("Invalid ontology RID");
-    }
-  } else {
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises
-    ontologyRid.then((ontologyRid) => {
-      if (!ontologyRid.startsWith("ri.")) {
-        // FIXME this promise is not await so this just shows up as an unhandled promise rejection
-        throw new Error("Invalid ontology RID");
-      }
-    });
+  const validatedOntologyRid: string | Promise<string> =
+    typeof ontologyRid === "string"
+      ? assertValidOntologyRid(ontologyRid)
+      : ontologyRid.then(assertValidOntologyRid);
+  if (typeof validatedOntologyRid !== "string") {
+    // Every consumer awaits this promise and sees the rejection; this only
+    // keeps an unused invalid RID from surfacing as an unhandled rejection.
+    validatedOntologyRid.catch(() => {});
   }
 
   const clientCtx: MinimalClient = createMinimalClient(
-    { ontologyRid },
+    { ontologyRid: validatedOntologyRid },
     baseUrl,
     tokenProvider,
     {
