@@ -19,19 +19,28 @@ import classnames from "classnames";
 import React, { useMemo } from "react";
 
 import { useMediaContents } from "../shared/hooks/useMediaContents.js";
+import {
+  createSameOriginObjectUrl,
+  OPAQUE_BINARY_TYPE,
+  revokeIfObjectUrl,
+} from "../shared/mediaObjectUrl.js";
 import { BaseVideoViewer } from "./BaseVideoViewer.js";
 import type { VideoViewerProps } from "./VideoViewerApi.js";
 
 import styles from "./BaseVideoViewer.module.css";
 
-const transformToObjectUrl = async (response: Response): Promise<string> => {
-  const blob = await response.blob();
-  return URL.createObjectURL(blob);
-};
+// Structured-syntax suffixes are excluded because browsers render types such
+// as `video/x+xml` as XML documents.
+const VIDEO_TYPE = /^video\/[0-9a-z.-]+$/u;
 
-const cleanupObjectUrl = (url: string): void => {
-  URL.revokeObjectURL(url);
-};
+function toVideoType(essence: string | undefined): string {
+  return essence != null && VIDEO_TYPE.test(essence)
+    ? essence
+    : OPAQUE_BINARY_TYPE;
+}
+
+const transformToObjectUrl = (response: Response): Promise<string> =>
+  createSameOriginObjectUrl(response, toVideoType);
 
 export function VideoViewer({
   media,
@@ -42,7 +51,7 @@ export function VideoViewer({
     data: src,
     loading,
     error,
-  } = useMediaContents(media, transformToObjectUrl, cleanupObjectUrl);
+  } = useMediaContents(media, transformToObjectUrl, revokeIfObjectUrl);
 
   const mimeType = useMemo(
     () => videoViewerProps.mimeType ?? media.getMediaReference().mimeType,

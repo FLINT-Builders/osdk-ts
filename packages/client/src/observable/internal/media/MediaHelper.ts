@@ -31,6 +31,7 @@ import type {
   MediaMetadataPayload,
 } from "./MediaMetadataQuery.js";
 import { MediaMetadataQuery } from "./MediaMetadataQuery.js";
+import { toInertBlobType } from "./toInertBlobType.js";
 
 export class MediaHelper extends AbstractHelper<
   MediaMetadataQuery,
@@ -134,9 +135,9 @@ export class MediaHelper extends AbstractHelper<
     } else if ("fetchContents" in mediaOrLocation) {
       response = await mediaOrLocation.fetchContents();
       const arrayBuffer = await response.arrayBuffer();
-      const contentType =
-        response.headers.get("content-type") || "application/octet-stream";
-      const blob = new Blob([arrayBuffer], { type: contentType });
+      const blob = new Blob([arrayBuffer], {
+        type: toInertBlobType(response.headers.get("content-type")),
+      });
       this.blobManager.add(baseCacheKey, blob);
       return blob;
     } else {
@@ -146,9 +147,9 @@ export class MediaHelper extends AbstractHelper<
     }
 
     const arrayBuffer = await response.arrayBuffer();
-    const contentType =
-      response.headers.get("content-type") || "application/octet-stream";
-    const blob = new Blob([arrayBuffer], { type: contentType });
+    const blob = new Blob([arrayBuffer], {
+      type: toInertBlobType(response.headers.get("content-type")),
+    });
 
     this.blobManager.add(cacheKey, blob);
 
