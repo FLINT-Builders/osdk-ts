@@ -35,7 +35,7 @@ const config: StorybookConfig = {
   },
   features: {
     // Required for @storybook/addon-mcp to expose component metadata to AI tools
-    experimentalComponentsManifest: true,
+    componentsManifest: true,
   },
   typescript: {
     check: false,
