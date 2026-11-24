@@ -56,6 +56,8 @@ An example of a full `foundry.config.json` is show below:
 }
 ```
 
+Because anyone who can edit the project can change `foundryUrl`, a stack URL that only comes from `foundry.config.json` must be confirmed interactively before your Foundry token is sent to it. In non-interactive environments such as CI, pass `--foundryUrl` or set the `OSDK_FOUNDRY_URL` environment variable instead.
+
 ---
 
 The `site` subcommand is not runnable without passing a specific subcommand i.e (`deploy` or `version`)
