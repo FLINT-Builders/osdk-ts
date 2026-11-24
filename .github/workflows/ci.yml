@@ -3,6 +3,9 @@ name: CI
 env:
   DO_NOT_TRACK: 1
 
+permissions:
+  contents: read
+
 on:
   push:
     branches: 
@@ -405,7 +408,7 @@ jobs:
 
     services:
       verdaccio:
-        image: verdaccio/verdaccio
+        image: verdaccio/verdaccio:7.1.2@sha256:4addf64c2fd5f86e963444e8a482d7cd20cd2243e01470d548bdb23d0cd609de
         # options: >-
         #   --health-cmd "curl -f http://localhost:4873/"
         #   --health-interval 5s
@@ -418,6 +421,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 2
+          persist-credentials: false
 
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
 
@@ -443,7 +447,12 @@ jobs:
 
       - name: Setup Verdaccio
         run: |
-          npx npm-auth-to-token -u verdaccio -p fake -e fake@palantir.com -r http://localhost:4873
+          token=$(curl --silent --show-error --fail -X PUT --user verdaccio:fake \
+            -H "Content-Type: application/json" \
+            -d '{"name":"verdaccio","password":"fake","email":"fake@palantir.com"}' \
+            http://localhost:4873/-/user/org.couchdb.user:verdaccio \
+            | node -e 'const { token } = JSON.parse(require("fs").readFileSync(0, "utf8")); if (!token) throw new Error("Verdaccio returned no token"); process.stdout.write(token)')
+          npm config set //localhost:4873/:_authToken "$token"
           npm config set registry http://localhost:4873
 
       - name: Faux Release
