@@ -14,11 +14,18 @@
  * limitations under the License.
  */
 
+import { readFileSync } from "node:fs";
 import { configDefaults, defineConfig } from "vitest/config";
+
+// The transpile step inlines this; tests run untranspiled source.
+const PACKAGE_CLI_VERSION: string = JSON.parse(
+  readFileSync(new URL("../cli/package.json", import.meta.url), "utf-8"),
+).version;
 
 export default defineConfig({
   test: {
     pool: "forks",
+    env: { PACKAGE_CLI_VERSION },
     exclude: [...configDefaults.exclude, "**/build/**/*"],
     coverage: {
       include: ["src/**"],
