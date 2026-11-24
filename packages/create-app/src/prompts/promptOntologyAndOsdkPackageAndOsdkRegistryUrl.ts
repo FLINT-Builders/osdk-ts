@@ -93,7 +93,7 @@ export async function promptOntologyAndOsdkPackageAndOsdkRegistryUrl({
 
   while (
     osdkRegistryUrl == null ||
-    !/^https:\/\/[^/]+\/artifacts\/api\/repositories\/ri\.artifacts\.[^/]+\/contents\/release\/npm\/?$/u.test(
+    !/^https:\/\/[^/\s\p{Cc}]+\/artifacts\/api\/repositories\/ri\.artifacts\.[^/\s\p{Cc}]+\/contents\/release\/npm\/?$/u.test(
       osdkRegistryUrl,
     )
   ) {

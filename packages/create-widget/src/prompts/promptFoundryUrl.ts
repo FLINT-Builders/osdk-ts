@@ -16,15 +16,32 @@
 
 import { consola } from "../consola.js";
 import { italic } from "../highlight.js";
+import {
+  containsUnsafeCharacters,
+  InvalidUrlError,
+  parseFoundryUrl,
+} from "../parseFoundryUrl.js";
 
 export async function promptFoundryUrl({
   foundryUrl,
 }: {
   foundryUrl?: string;
 }): Promise<string> {
-  while (foundryUrl == null || !foundryUrl.startsWith("https://")) {
+  while (true) {
     if (foundryUrl != null) {
-      consola.fail("Please enter a valid Foundry URL");
+      if (containsUnsafeCharacters(foundryUrl)) {
+        throw new InvalidUrlError(
+          "Foundry URL must not contain whitespace or control characters",
+        );
+      }
+      try {
+        return parseFoundryUrl(foundryUrl).origin;
+      } catch (e) {
+        if (!(e instanceof InvalidUrlError)) {
+          throw e;
+        }
+        consola.fail(`Please enter a valid Foundry URL: ${e.message}`);
+      }
     }
     foundryUrl = await consola.prompt(
       `Enter the URL for your Foundry stack:\n${italic(
@@ -33,5 +50,4 @@ export async function promptFoundryUrl({
       { type: "text" },
     );
   }
-  return foundryUrl.replace(/\/$/u, "");
 }
