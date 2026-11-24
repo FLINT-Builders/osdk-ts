@@ -70,10 +70,11 @@ import { BaseSpreadsheetViewer } from "@osdk/react-components/spreadsheet-viewer
 
 ### SheetData
 
-| Field  | Type                             | Description                    |
-| ------ | -------------------------------- | ------------------------------ |
-| `name` | `string`                         | Sheet name                     |
-| `rows` | `readonly (readonly string[])[]` | Rows of cell values as strings |
+| Field       | Type                             | Description                                                                         |
+| ----------- | -------------------------------- | ----------------------------------------------------------------------------------- |
+| `name`      | `string`                         | Sheet name                                                                          |
+| `rows`      | `readonly (readonly string[])[]` | Rows of cell values as strings                                                      |
+| `truncated` | `boolean`                        | Whether rows or columns were left out because the sheet exceeds the viewer's limits |
 
 ## Features
 
@@ -81,6 +82,11 @@ import { BaseSpreadsheetViewer } from "@osdk/react-components/spreadsheet-viewer
 - Sheet tab navigation at the bottom for multi-sheet workbooks
 - Sticky header row
 - First row treated as column headers
+- Only the rows and columns in view are rendered, so large sheets stay responsive
+
+## Limits
+
+`SpreadsheetViewer` sizes each sheet from the cells the file stores, not from the range the file declares. It rejects files larger than 25 MB and shows at most 100,000 rows and 1,000 columns per sheet, and 2,000,000 cells across the workbook. When a sheet is cut, the viewer shows a notice below it.
 
 ## Theming
 

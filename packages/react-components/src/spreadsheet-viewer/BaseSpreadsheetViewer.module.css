@@ -74,6 +74,22 @@
   min-width: var(--osdk-spreadsheet-viewer-col-min-width);
 }
 
+/* Stands in for rows and columns outside the rendered window */
+.spacer {
+  padding: 0;
+  border: none;
+}
+
+.truncatedNotice {
+  flex-shrink: 0;
+  padding: var(--osdk-spreadsheet-viewer-cell-padding);
+  border-top: var(--osdk-spreadsheet-viewer-tab-border);
+  background-color: var(--osdk-spreadsheet-viewer-header-bg);
+  font-family: var(--osdk-typography-family-default);
+  font-size: var(--osdk-typography-size-body-x-small);
+  color: var(--osdk-typography-color-muted);
+}
+
 /* Sheet tabs bar */
 .tabBar {
   display: flex;
