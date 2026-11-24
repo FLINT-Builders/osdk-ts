@@ -17,6 +17,10 @@
 import { NonIdealState, Pre, Spinner, SpinnerSize } from "@blueprintjs/core";
 import React, { useEffect } from "react";
 
+import {
+  FINISH_SECRET_HEADER,
+  FINISH_SECRET_META_NAME,
+} from "../common/constants.js";
 import { EntrypointIframe } from "./entrypointIframe.js";
 
 type PageState =
@@ -197,5 +201,16 @@ function finish(attempt: number): Promise<
       status: "pending";
     }
 > {
-  return fetch(`../finish?attempt=${attempt}`).then((res) => res.json());
+  return fetch(`../finish?attempt=${attempt}`, {
+    method: "POST",
+    headers: { [FINISH_SECRET_HEADER]: readFinishSecret() },
+  }).then((res) => res.json());
+}
+
+function readFinishSecret(): string {
+  return (
+    document.querySelector<HTMLMetaElement>(
+      `meta[name="${FINISH_SECRET_META_NAME}"]`,
+    )?.content ?? ""
+  );
 }
