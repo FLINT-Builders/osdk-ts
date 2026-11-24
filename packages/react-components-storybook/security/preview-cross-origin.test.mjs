@@ -25,10 +25,17 @@
  */
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
+import { existsSync, readdirSync } from "node:fs";
+import {
+  mkdtemp,
+  mkdir,
+  readFile,
+  rm,
+  writeFile,
+  chmod,
+} from "node:fs/promises";
 import { createServer } from "node:http";
 import { createRequire } from "node:module";
-import { mkdtemp, mkdir, readFile, rm, writeFile, chmod } from "node:fs/promises";
-import { existsSync, readdirSync } from "node:fs";
 import net from "node:net";
 import os from "node:os";
 import path from "node:path";
@@ -73,163 +80,167 @@ let attackerOrigin;
 let browser;
 let editorMarker;
 
-describe("storybook dev preview rejects foreign origins", { concurrency: 1, timeout: 180_000 }, () => {
-  before(async () => {
-    projectDir = await mkdtemp(path.join(os.tmpdir(), "sb-preview-origin-"));
-    editorMarker = path.join(projectDir, "editor-invoked.txt");
-    await mkdir(path.join(projectDir, "src"), { recursive: true });
-    await mkdir(path.join(projectDir, ".storybook"), { recursive: true });
-    await writeFile(path.join(projectDir, STORY_REL), storySource);
-    await writeFile(
-      path.join(projectDir, COMPONENT_REL),
-      "export const Widget = () => null;\n",
-    );
-    // Same shape as packages/react-components-storybook/.storybook/main.ts:
-    // stock framework preview, no security, frame, or origin options.
-    await writeFile(
-      path.join(projectDir, ".storybook/main.js"),
-      `export default {
+describe(
+  "storybook dev preview rejects foreign origins",
+  { concurrency: 1, timeout: 180_000 },
+  () => {
+    before(async () => {
+      projectDir = await mkdtemp(path.join(os.tmpdir(), "sb-preview-origin-"));
+      editorMarker = path.join(projectDir, "editor-invoked.txt");
+      await mkdir(path.join(projectDir, "src"), { recursive: true });
+      await mkdir(path.join(projectDir, ".storybook"), { recursive: true });
+      await writeFile(path.join(projectDir, STORY_REL), storySource);
+      await writeFile(
+        path.join(projectDir, COMPONENT_REL),
+        "export const Widget = () => null;\n",
+      );
+      // Same shape as packages/react-components-storybook/.storybook/main.ts:
+      // stock framework preview, no security, frame, or origin options.
+      await writeFile(
+        path.join(projectDir, ".storybook/main.js"),
+        `export default {
   stories: ["../src/**/*.stories.jsx"],
   framework: "@storybook/react-vite",
 };
 `,
-    );
-    const editorScript = path.join(projectDir, "record-editor.sh");
-    await writeFile(
-      editorScript,
-      `#!/bin/sh
+      );
+      const editorScript = path.join(projectDir, "record-editor.sh");
+      await writeFile(
+        editorScript,
+        `#!/bin/sh
 printf '%s\\n' "$1" > ${shellQuote(editorMarker)}
 `,
-    );
-    await chmod(editorScript, 0o755);
-    await symlinkNodeModules(projectDir);
+      );
+      await chmod(editorScript, 0o755);
+      await symlinkNodeModules(projectDir);
 
-    const port = await freePort();
-    storybook = spawn(
-      process.execPath,
-      [
-        storybookBin,
-        "dev",
-        "-p",
-        String(port),
-        "--host",
-        "localhost",
-        "--exact-port",
-        "--ci",
-        "--no-open",
-        "--disable-telemetry",
-        "--quiet",
-      ],
-      {
-        cwd: projectDir,
-        detached: true,
-        env: {
-          ...process.env,
-          LAUNCH_EDITOR: editorScript,
-          STORYBOOK_DISABLE_TELEMETRY: "1",
-          BROWSER: "none",
-          CI: "1",
+      const port = await freePort();
+      storybook = spawn(
+        process.execPath,
+        [
+          storybookBin,
+          "dev",
+          "-p",
+          String(port),
+          "--host",
+          "localhost",
+          "--exact-port",
+          "--ci",
+          "--no-open",
+          "--disable-telemetry",
+          "--quiet",
+        ],
+        {
+          cwd: projectDir,
+          detached: true,
+          env: {
+            ...process.env,
+            LAUNCH_EDITOR: editorScript,
+            STORYBOOK_DISABLE_TELEMETRY: "1",
+            BROWSER: "none",
+            CI: "1",
+          },
+          stdio: ["ignore", "pipe", "pipe"],
         },
-        stdio: ["ignore", "pipe", "pipe"],
-      },
-    );
-    storybook.stdout.on("data", (chunk) => {
-      storybookLogs += chunk.toString();
-    });
-    storybook.stderr.on("data", (chunk) => {
-      storybookLogs += chunk.toString();
+      );
+      storybook.stdout.on("data", (chunk) => {
+        storybookLogs += chunk.toString();
+      });
+      storybook.stderr.on("data", (chunk) => {
+        storybookLogs += chunk.toString();
+      });
+
+      await waitForIndex(port);
+      attacker = createServer((req, res) => {
+        const encodedPayload = req.url?.startsWith("/payload/")
+          ? req.url.slice("/payload/".length)
+          : "";
+        res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
+        res.end(attackerPage(port, encodedPayload));
+      });
+      await new Promise((resolve) => attacker.listen(0, "127.0.0.1", resolve));
+      attackerOrigin = `http://${ATTACKER_HOST}:${attacker.address().port}`;
+
+      browser = await launchBrowser();
     });
 
-    await waitForIndex(port);
-    attacker = createServer((req, res) => {
-      const encodedPayload = req.url?.startsWith("/payload/")
-        ? req.url.slice("/payload/".length)
-        : "";
-      res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
-      res.end(attackerPage(port, encodedPayload));
-    });
-    await new Promise((resolve) => attacker.listen(0, "127.0.0.1", resolve));
-    attackerOrigin = `http://${ATTACKER_HOST}:${attacker.address().port}`;
-
-    browser = await launchBrowser();
-  });
-
-  after(async () => {
-    await browser?.close().catch(() => {});
-    await new Promise((resolve) => attacker?.close(resolve));
-    if (storybook?.pid) {
-      try {
-        process.kill(-storybook.pid, "SIGTERM");
-      } catch {
-        storybook.kill("SIGTERM");
+    after(async () => {
+      await browser?.close().catch(() => {});
+      await new Promise((resolve) => attacker?.close(resolve));
+      if (storybook?.pid) {
+        try {
+          process.kill(-storybook.pid, "SIGTERM");
+        } catch {
+          storybook.kill("SIGTERM");
+        }
       }
-    }
-    if (projectDir) {
-      await rm(projectDir, { recursive: true, force: true });
-    }
-  });
+      if (projectDir) {
+        await rm(projectDir, { recursive: true, force: true });
+      }
+    });
 
-  test("a foreign page cannot rewrite a story file from the preview", async () => {
-    const storyPath = path.join(projectDir, STORY_REL);
-    const before = await readFile(storyPath, "utf8");
-    await drivePreview({
-      clickEvent: "saveStoryRequest",
-      id: {
-        id: "save-1",
-        payload: {
-          csfId: STORY_ID,
-          importPath: `./${STORY_REL}`,
-          args: JSON.stringify({ label: "written-by-foreign-origin" }),
+    test("a foreign page cannot rewrite a story file from the preview", async () => {
+      const storyPath = path.join(projectDir, STORY_REL);
+      const before = await readFile(storyPath, "utf8");
+      await drivePreview({
+        clickEvent: "saveStoryRequest",
+        id: {
+          id: "save-1",
+          payload: {
+            csfId: STORY_ID,
+            importPath: `./${STORY_REL}`,
+            args: JSON.stringify({ label: "written-by-foreign-origin" }),
+          },
         },
-      },
-      title: "Save marker",
+        title: "Save marker",
+      });
+      assert.equal(
+        await readFile(storyPath, "utf8"),
+        before,
+        `foreign origin changed ${STORY_REL}\n${tail(storybookLogs)}`,
+      );
     });
-    assert.equal(
-      await readFile(storyPath, "utf8"),
-      before,
-      `foreign origin changed ${STORY_REL}\n${tail(storybookLogs)}`,
-    );
-  });
 
-  test("a foreign page cannot create a story file from the preview", async () => {
-    const before = storyFiles(projectDir);
-    await drivePreview({
-      clickEvent: "createNewStoryfileRequest",
-      id: {
-        id: "create-1",
-        payload: {
-          componentFilePath: COMPONENT_REL,
-          componentExportName: "Widget",
-          componentIsDefaultExport: false,
-          componentExportCount: 1,
+    test("a foreign page cannot create a story file from the preview", async () => {
+      const before = storyFiles(projectDir);
+      await drivePreview({
+        clickEvent: "createNewStoryfileRequest",
+        id: {
+          id: "create-1",
+          payload: {
+            componentFilePath: COMPONENT_REL,
+            componentExportName: "Widget",
+            componentIsDefaultExport: false,
+            componentExportCount: 1,
+          },
         },
-      },
-      title: "Create marker",
+        title: "Create marker",
+      });
+      assert.deepEqual(
+        storyFiles(projectDir),
+        before,
+        `foreign origin created a story file\n${tail(storybookLogs)}`,
+      );
     });
-    assert.deepEqual(
-      storyFiles(projectDir),
-      before,
-      `foreign origin created a story file\n${tail(storybookLogs)}`,
-    );
-  });
 
-  test("a foreign page cannot launch an editor from the preview", async () => {
-    await drivePreview({
-      clickEvent: "openInEditorRequest",
-      id: {
-        file: path.join(projectDir, STORY_REL),
-        line: 1,
-        column: 1,
-      },
-      title: "Open marker",
+    test("a foreign page cannot launch an editor from the preview", async () => {
+      await drivePreview({
+        clickEvent: "openInEditorRequest",
+        id: {
+          file: path.join(projectDir, STORY_REL),
+          line: 1,
+          column: 1,
+        },
+        title: "Open marker",
+      });
+      assert.equal(
+        existsSync(editorMarker),
+        false,
+        `foreign origin launched an editor\n${tail(storybookLogs)}`,
+      );
     });
-    assert.equal(
-      existsSync(editorMarker),
-      false,
-      `foreign origin launched an editor\n${tail(storybookLogs)}`,
-    );
-  });
-});
+  },
+);
 
 async function launchBrowser() {
   const args = [
@@ -291,7 +302,9 @@ async function waitForIndex(port) {
     }
     await delay(250);
   }
-  throw new Error(`storybook did not serve its index: ${lastError}\n${storybookLogs}`);
+  throw new Error(
+    `storybook did not serve its index: ${lastError}\n${storybookLogs}`,
+  );
 }
 
 function attackerPage(storybookPort, encodedPayload) {
@@ -356,10 +369,12 @@ function storyFiles(root) {
   const found = [];
   const visit = (directory) => {
     for (const entry of readdirSync(directory, { withFileTypes: true })) {
-      if (entry.name === "node_modules" || entry.name === ".storybook") continue;
+      if (entry.name === "node_modules" || entry.name === ".storybook")
+        continue;
       const full = path.join(directory, entry.name);
       if (entry.isDirectory()) visit(full);
-      else if (/\.stories\./u.test(entry.name)) found.push(path.relative(root, full));
+      else if (/\.stories\./u.test(entry.name))
+        found.push(path.relative(root, full));
     }
   };
   visit(root);
