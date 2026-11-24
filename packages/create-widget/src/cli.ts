@@ -29,6 +29,7 @@ import { promptUseOsdk } from "./prompts/promptUseOsdk.js";
 import { promptWidgetSetRid } from "./prompts/promptWidgetSetRid.js";
 import { run } from "./run.js";
 import type { SdkVersion, Template } from "./templates.js";
+import { parseFoundryUrl } from "./validation.js";
 
 interface CliArgs {
   project?: string;
@@ -95,6 +96,17 @@ export async function cli(args: string[] = process.argv): Promise<void> {
           .option("skipOsdk", {
             type: "boolean",
             describe: "Skip filling in OSDK options",
+          })
+          .check((argv) => {
+            if (
+              argv.foundryUrl != null &&
+              parseFoundryUrl(argv.foundryUrl) == null
+            ) {
+              throw new Error(
+                "The --foundryUrl flag must be an https URL with only a host and optional port, e.g. https://example.palantirfoundry.com",
+              );
+            }
+            return true;
           }),
     );
 

@@ -24,6 +24,13 @@ import { generateFoundryConfigJson } from "./generate/generateFoundryConfigJson.
 import { generateNpmRc } from "./generate/generateNpmRc.js";
 import { green } from "./highlight.js";
 import type { SdkVersion, Template, TemplateContext } from "./templates.js";
+import {
+  NPM_PACKAGE_NAME_REGEX,
+  parseFoundryUrl,
+  parseHttpsUrl,
+  PROJECT_NAME_REGEX,
+  WIDGET_SET_RID_REGEX,
+} from "./validation.js";
 
 interface RunArgs {
   project: string;
@@ -42,12 +49,25 @@ export async function run({
   overwrite,
   template,
   sdkVersion,
-  foundryUrl,
+  foundryUrl: rawFoundryUrl,
   widgetSet,
   repository,
   osdkPackage,
   osdkRegistryUrl,
 }: RunArgs): Promise<void> {
+  const foundryUrl = parseFoundryUrl(rawFoundryUrl);
+  if (foundryUrl == null) {
+    throw new Error(`Invalid Foundry URL: ${JSON.stringify(rawFoundryUrl)}`);
+  }
+  if (osdkRegistryUrl != null && parseHttpsUrl(osdkRegistryUrl) == null) {
+    throw new Error(
+      `Invalid OSDK registry URL: ${JSON.stringify(osdkRegistryUrl)}`,
+    );
+  }
+  assertMatches("project name", project, PROJECT_NAME_REGEX);
+  assertMatches("widget set rid", widgetSet, WIDGET_SET_RID_REGEX);
+  assertMatches("OSDK package name", osdkPackage, NPM_PACKAGE_NAME_REGEX);
+
   consola.log("");
   consola.start(
     `Creating project ${green(project)} using template ${green(template.id)}`,
@@ -185,4 +205,14 @@ export async function run({
       borderStyle: "rounded",
     },
   });
+}
+
+function assertMatches(
+  name: string,
+  value: string | undefined,
+  regex: RegExp,
+): void {
+  if (value != null && !regex.test(value)) {
+    throw new Error(`Invalid ${name}: ${JSON.stringify(value)}`);
+  }
 }

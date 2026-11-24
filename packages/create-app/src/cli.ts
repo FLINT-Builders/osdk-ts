@@ -31,6 +31,7 @@ import { promptSdkVersion } from "./prompts/promptSdkVersion.js";
 import { promptTemplate } from "./prompts/promptTemplate.js";
 import { run } from "./run.js";
 import type { SdkVersion, Template } from "./templates.js";
+import { parseFoundryUrl } from "./validation.js";
 
 interface CliArgs {
   project?: string;
@@ -146,6 +147,14 @@ export async function cli(args: string[] = process.argv): Promise<void> {
             ) {
               throw new Error(
                 "The --skipOsdk flag is only allowed when sdkVersion is 2.x. Please set --sdkVersion to 2.x or remove the --skipOsdk flag.",
+              );
+            }
+            if (
+              argv.foundryUrl != null &&
+              parseFoundryUrl(argv.foundryUrl) == null
+            ) {
+              throw new Error(
+                "The --foundryUrl flag must be an https URL with only a host and optional port, e.g. https://example.palantirfoundry.com",
               );
             }
             return true;

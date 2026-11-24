@@ -33,6 +33,17 @@ import { generateFoundryConfigJson } from "./generate/generateFoundryConfigJson.
 import { generateNpmRc } from "./generate/generateNpmRc.js";
 import { green } from "./highlight.js";
 import type { SdkVersion, Template, TemplateContext } from "./templates.js";
+import {
+  APPLICATION_RID_REGEX,
+  CLIENT_ID_REGEX,
+  NPM_PACKAGE_NAME_REGEX,
+  ONTOLOGY_RID_REGEX,
+  parseApplicationUrl,
+  parseFoundryUrl,
+  parseHttpsUrl,
+  PROJECT_NAME_REGEX,
+  SCOPE_NAME_REGEX,
+} from "./validation.js";
 
 interface RunArgs {
   project: string;
@@ -57,8 +68,8 @@ export async function run({
   overwrite,
   template,
   sdkVersion,
-  foundryUrl,
-  applicationUrl,
+  foundryUrl: rawFoundryUrl,
+  applicationUrl: rawApplicationUrl,
   application,
   ontology,
   clientId,
@@ -68,6 +79,33 @@ export async function run({
   scopes,
   unstableFeatures = false,
 }: RunArgs): Promise<void> {
+  const foundryUrl = parseFoundryUrl(rawFoundryUrl);
+  if (foundryUrl == null) {
+    throw new Error(`Invalid Foundry URL: ${JSON.stringify(rawFoundryUrl)}`);
+  }
+  const applicationUrl =
+    rawApplicationUrl != null
+      ? parseApplicationUrl(rawApplicationUrl)
+      : undefined;
+  if (rawApplicationUrl != null && applicationUrl == null) {
+    throw new Error(
+      `Invalid application URL: ${JSON.stringify(rawApplicationUrl)}`,
+    );
+  }
+  if (osdkRegistryUrl != null && parseHttpsUrl(osdkRegistryUrl) == null) {
+    throw new Error(
+      `Invalid OSDK registry URL: ${JSON.stringify(osdkRegistryUrl)}`,
+    );
+  }
+  assertMatches("project name", project, PROJECT_NAME_REGEX);
+  assertMatches("application rid", application, APPLICATION_RID_REGEX);
+  assertMatches("ontology rid", ontology, ONTOLOGY_RID_REGEX);
+  assertMatches("client ID", clientId, CLIENT_ID_REGEX);
+  assertMatches("OSDK package name", osdkPackage, NPM_PACKAGE_NAME_REGEX);
+  for (const scope of scopes ?? []) {
+    assertMatches("scope", scope, SCOPE_NAME_REGEX);
+  }
+
   consola.log("");
   consola.start(
     `Creating project ${green(project)} using template ${green(template.id)}`,
@@ -264,4 +302,14 @@ export async function run({
       borderStyle: "rounded",
     },
   });
+}
+
+function assertMatches(
+  name: string,
+  value: string | undefined,
+  regex: RegExp,
+): void {
+  if (value != null && !regex.test(value)) {
+    throw new Error(`Invalid ${name}: ${JSON.stringify(value)}`);
+  }
 }
