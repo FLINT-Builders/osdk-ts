@@ -20,15 +20,15 @@ import { findUp } from "find-up";
 import { describe, expect, it, vi } from "vitest";
 
 import { autoVersion } from "./autoVersion.js";
-import { execAsync } from "./execAsync.js";
+import { execFileAsync } from "./execFileAsync.js";
 
 vi.mock("find-up");
 vi.mock("node:child_process");
 vi.mock("node:fs");
-vi.mock("./execAsync.js");
+vi.mock("./execFileAsync.js");
 
 describe("autoVersion", () => {
-  const execMock = vi.mocked(execAsync);
+  const execMock = vi.mocked(execFileAsync);
   const execReturnValue = (out: string) => ({ stdout: out, stderr: "" });
 
   it("should return a valid SemVer version from package.json", async () => {

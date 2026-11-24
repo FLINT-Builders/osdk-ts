@@ -20,7 +20,7 @@ import { findUp } from "find-up";
 import { valid } from "semver";
 
 import type { AutoVersionConfig } from "./config.js";
-import { execAsync } from "./execAsync.js";
+import { execFileAsync } from "./execFileAsync.js";
 
 export class AutoVersionError extends Error {
   constructor(
@@ -56,17 +56,15 @@ export async function autoVersion(config: AutoVersionConfig): Promise<string> {
 }
 
 async function gitDescribeAutoVersion(tagPrefix: string = ""): Promise<string> {
-  const [matchPrefix, prefixRegex] =
-    tagPrefix !== ""
-      ? // oxlint-disable-next-line require-unicode-regexp -- dynamic pattern; adding the u flag could change matching or throw on patterns that are valid without it
-        [tagPrefix, new RegExp(`^${tagPrefix}`)]
-      : // oxlint-disable-next-line require-unicode-regexp -- dynamic pattern; adding the u flag could change matching or throw on patterns that are valid without it
-        [undefined, new RegExp(`^v?`)];
-
-  const gitVersion = await gitDescribe(matchPrefix);
-  const version = gitVersion.trim().replace(prefixRegex, "");
+  const matchPrefix = tagPrefix !== "" ? tagPrefix : undefined;
+  const gitVersion = (await gitDescribe(matchPrefix)).trim();
+  const version = stripPrefix(gitVersion, matchPrefix ?? "v");
   validateVersion(version);
   return version;
+}
+
+function stripPrefix(value: string, prefix: string): string {
+  return value.startsWith(prefix) ? value.slice(prefix.length) : value;
 }
 
 async function packageJsonAutoVersion(): Promise<string> {
@@ -95,18 +93,18 @@ async function packageJsonAutoVersion(): Promise<string> {
 async function gitDescribe(matchPrefix: string | undefined): Promise<string> {
   let gitVersion;
   try {
-    const { stdout } = await execAsync(
-      `git describe --tags --first-parent --dirty${
-        matchPrefix != null ? ` --match="${matchPrefix}*"` : ""
-      }`,
-      { encoding: "utf8" },
-    );
+    const args = ["describe", "--tags", "--first-parent", "--dirty"];
+    if (matchPrefix != null) {
+      args.push(`--match=${matchPrefix}*`);
+    }
+    const { stdout } = await execFileAsync("git", args, { encoding: "utf8" });
     gitVersion = stdout;
   } catch (error: any) {
     if (error instanceof Error) {
       const errorMessage: string = error.message.toLowerCase();
 
       if (
+        (error as NodeJS.ErrnoException).code === "ENOENT" ||
         errorMessage.includes("not recognized") ||
         errorMessage.includes("command not found") ||
         errorMessage.includes("no such file or directory")
