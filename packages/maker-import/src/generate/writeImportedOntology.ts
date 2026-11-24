@@ -25,7 +25,13 @@ import { convertActionType } from "./convertActionType.js";
 import { convertInterfaceType } from "./convertInterfaceType.js";
 import { convertObjectType } from "./convertObjectType.js";
 import { convertSharedPropertyType } from "./convertSharedPropertyType.js";
-import { camel, fullCamel, withoutNamespace } from "./utils.js";
+import {
+  camel,
+  fullCamel,
+  isSafeIdentifier,
+  toSafeIdentifier,
+  withoutNamespace,
+} from "./utils.js";
 
 const TYPE_NAME_MAP: Record<string, string> = {
   [OntologyEntityTypeEnum.OBJECT_TYPE]: "ObjectType",
@@ -40,6 +46,18 @@ const DIR_NAME_MAP: Record<string, string> = {
   [OntologyEntityTypeEnum.INTERFACE_TYPE]: "interface-types",
   [OntologyEntityTypeEnum.SHARED_PROPERTY_TYPE]: "shared-property-types",
 };
+
+const ENTITY_TYPE_VALUES: ReadonlySet<string> = new Set(
+  Object.values(OntologyEntityTypeEnum),
+);
+
+function assertSafeIdentifier(varName: string): void {
+  if (!isSafeIdentifier(varName)) {
+    throw new Error(
+      `Refusing to generate code for unsafe identifier ${JSON.stringify(varName)}`,
+    );
+  }
+}
 
 interface EntityEntry {
   apiName: string;
@@ -90,9 +108,14 @@ export function convertOntologyFullMetadata(
  * If that collides, all colliding entries are escalated to the full
  * camelCase name (namespace included). Any remaining duplicates get
  * a numeric suffix.
+ *
+ * Every returned name is a safe identifier (see toSafeIdentifier), because
+ * it is emitted verbatim as a declaration, an export and a file name.
  */
 export function resolveVarNames(apiNames: string[]): string[] {
-  const shortNames = apiNames.map((n) => camel(withoutNamespace(n)));
+  const shortNames = apiNames.map((n) =>
+    toSafeIdentifier(camel(withoutNamespace(n))),
+  );
 
   // Find which short names appear more than once
   const counts = new Map<string, number>();
@@ -103,18 +126,21 @@ export function resolveVarNames(apiNames: string[]): string[] {
   // Escalate conflicting names to fullCamel
   const resolved = apiNames.map((apiName, i) => {
     if (counts.get(shortNames[i])! > 1) {
-      return fullCamel(apiName);
+      return toSafeIdentifier(fullCamel(apiName));
     }
     return shortNames[i];
   });
 
   // Handle any remaining duplicates with numeric suffixes
   const finalNames: string[] = [];
-  const used = new Map<string, number>();
+  const taken = new Set<string>();
   for (const name of resolved) {
-    const count = used.get(name) ?? 0;
-    finalNames.push(count === 0 ? name : `${name}${count}`);
-    used.set(name, count + 1);
+    let candidate = name;
+    for (let suffix = 1; taken.has(candidate); suffix++) {
+      candidate = `${name}${suffix}`;
+    }
+    taken.add(candidate);
+    finalNames.push(candidate);
   }
 
   return finalNames;
@@ -132,15 +158,6 @@ export function writeImportedOntology(
   outputDir: string,
 ): void {
   const codegenDir = path.resolve(outputDir, "codegen");
-
-  // Clean and create directories
-  for (const dirName of Object.values(DIR_NAME_MAP)) {
-    const dirPath = path.join(codegenDir, dirName);
-    if (fs.existsSync(dirPath)) {
-      fs.rmSync(dirPath, { recursive: true, force: true });
-    }
-    fs.mkdirSync(dirPath, { recursive: true });
-  }
 
   // Pass 1: Convert all entities
   const entries: EntityEntry[] = [];
@@ -163,6 +180,18 @@ export function writeImportedOntology(
 
   // Pass 2: Resolve unique variable names across all entities
   const varNames = resolveVarNames(entries.map((e) => e.apiName));
+  for (const varName of varNames) {
+    assertSafeIdentifier(varName);
+  }
+
+  // Clean and create directories
+  for (const dirName of Object.values(DIR_NAME_MAP)) {
+    const dirPath = path.join(codegenDir, dirName);
+    if (fs.existsSync(dirPath)) {
+      fs.rmSync(dirPath, { recursive: true, force: true });
+    }
+    fs.mkdirSync(dirPath, { recursive: true });
+  }
 
   // Pass 3: Write files with resolved names
   const topLevelExports: string[] = [];
@@ -191,12 +220,16 @@ function writeEntityFile(
   varName: string,
   topLevelExports: string[],
 ): void {
+  assertSafeIdentifier(varName);
   const typeName = TYPE_NAME_MAP[entityType];
   const dirName = DIR_NAME_MAP[entityType];
 
   const entityJSON = JSON.stringify(entity, null, 2).replace(
     /("__type"\s*:\s*)"([^"]*)"/gu,
-    (_, prefix, value) => `${prefix}OntologyEntityTypeEnum.${value}`,
+    (match, prefix, value) =>
+      ENTITY_TYPE_VALUES.has(value)
+        ? `${prefix}OntologyEntityTypeEnum.${value}`
+        : match,
   );
 
   const content = `import { wrapWithProxy, OntologyEntityTypeEnum } from '@osdk/maker';
@@ -208,7 +241,13 @@ const ${varName}_base: ${typeName} = ${entityJSON} as unknown as ${typeName};
 export const ${varName}: ${typeName} = wrapWithProxy(${varName}_base);
 `;
 
-  const filePath = path.join(codegenDir, dirName, `${varName}.ts`);
+  const dirPath = path.join(codegenDir, dirName);
+  const filePath = path.join(dirPath, `${varName}.ts`);
+  if (path.dirname(filePath) !== dirPath) {
+    throw new Error(
+      `Refusing to write generated file outside ${dirPath}: ${filePath}`,
+    );
+  }
   fs.writeFileSync(filePath, content, { flag: "w" });
 
   topLevelExports.push(

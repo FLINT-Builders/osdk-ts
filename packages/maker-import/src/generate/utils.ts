@@ -49,3 +49,85 @@ export function camel(str: string): string {
   result = result.charAt(0).toLowerCase() + result.slice(1);
   return result;
 }
+
+export const SAFE_IDENTIFIER_PATTERN: RegExp = /^[A-Za-z_$][A-Za-z0-9_$]*$/u;
+
+// Names that cannot be declared as a module-level `const`/`export`, plus the
+// bindings every generated entity file imports.
+const RESERVED_IDENTIFIERS = new Set([
+  "arguments",
+  "await",
+  "break",
+  "case",
+  "catch",
+  "class",
+  "const",
+  "continue",
+  "debugger",
+  "default",
+  "delete",
+  "do",
+  "else",
+  "enum",
+  "eval",
+  "export",
+  "extends",
+  "false",
+  "finally",
+  "for",
+  "function",
+  "if",
+  "implements",
+  "import",
+  "in",
+  "instanceof",
+  "interface",
+  "let",
+  "new",
+  "null",
+  "package",
+  "private",
+  "protected",
+  "public",
+  "return",
+  "static",
+  "super",
+  "switch",
+  "this",
+  "throw",
+  "true",
+  "try",
+  "typeof",
+  "undefined",
+  "var",
+  "void",
+  "while",
+  "with",
+  "yield",
+  "NaN",
+  "Infinity",
+  "OntologyEntityTypeEnum",
+  "wrapWithProxy",
+]);
+
+/**
+ * Coerces a derived name into an ASCII JavaScript identifier that is also a
+ * plain file name. Characters outside [A-Za-z0-9_$] become "_".
+ * "employee" -> "employee"
+ * "x=1;y" -> "x_1_y"
+ * "1abc" -> "_1abc"
+ */
+export function toSafeIdentifier(name: string): string {
+  let result = name.replace(/[^A-Za-z0-9_$]/gu, "_");
+  if (!/^[A-Za-z_$]/u.test(result)) {
+    result = `_${result}`;
+  }
+  if (RESERVED_IDENTIFIERS.has(result)) {
+    result = `${result}_`;
+  }
+  return result;
+}
+
+export function isSafeIdentifier(name: string): boolean {
+  return SAFE_IDENTIFIER_PATTERN.test(name) && !RESERVED_IDENTIFIERS.has(name);
+}
