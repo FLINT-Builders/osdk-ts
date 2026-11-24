@@ -220,10 +220,10 @@ ${
 
     export const ${interfaceDef.shortApiName} = {
       type: "interface",
-      apiName: "${interfaceDef.fullApiName}",
+      apiName: ${JSON.stringify(interfaceDef.fullApiName)},
       osdkMetadata: $osdkMetadata,
       internalDoNotUseMetadata: {
-        rid: "${definition.rid}",
+        rid: ${JSON.stringify(definition.rid)},
       },
     } satisfies ${interfaceDef.shortApiName} & { internalDoNotUseMetadata: { rid: string } } as ${interfaceDef.shortApiName};`;
 }

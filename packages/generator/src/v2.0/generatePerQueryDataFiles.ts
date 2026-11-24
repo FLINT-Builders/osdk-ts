@@ -169,7 +169,7 @@ async function generateV2QueryFile(
                 `
                 ${
                   queryParamJsDoc(paramToDef(parameter), { apiName })
-                }readonly "${apiName}"${q.nullable ? "?" : ""}`,
+                }readonly ${JSON.stringify(apiName)}${q.nullable ? "?" : ""}`,
                 getQueryParamType(ontology, q, "Param", false, typeRefNames),
               ];
             },
@@ -247,7 +247,9 @@ function parameterDefsForType(
 ) {
   return stringify(query.parameters, {
     "*": (parameter, valueFormatter, apiName) => [
-      `${queryParamJsDoc(paramToDef(parameter), { apiName })} "${apiName}"`,
+      `${queryParamJsDoc(paramToDef(parameter), { apiName })} ${
+        JSON.stringify(apiName)
+      }`,
       ` {
           ${stringify(deleteUndefineds(paramToDef(parameter)))},
           ${getLineFor__OsdkTargetType(ontology, parameter.dataType)}
@@ -295,7 +297,7 @@ export function getQueryParamType(
   isMapKey = false,
   typeRefNames?: Map<string, string>,
 ): string {
-  let paramType = `unknown /* ${input.type} */`;
+  let paramType = `unknown /* ${escapeJsDocText(input.type)} */`;
   const recurse = (i: QueryDataTypeDefinition, mk = false) =>
     getQueryParamType(enhancedOntology, i, type, mk, typeRefNames);
 
@@ -333,9 +335,9 @@ export function getQueryParamType(
           "*": (p, formatter, apiName) => {
             return [
               `
-                ${type === "Param" ? "readonly " : ""}"${apiName}"${
-                p.nullable ? "?" : ""
-              }`,
+                ${type === "Param" ? "readonly " : ""}${
+                JSON.stringify(apiName)
+              }${p.nullable ? "?" : ""}`,
               recurse(p),
             ];
           },
@@ -346,22 +348,34 @@ export function getQueryParamType(
     case "twoDimensionalAggregation":
       paramType = `Query${type}.TwoDimensionalAggregationType<${
         input.twoDimensionalAggregation.keyType === "range"
-          ? `Query${type}.RangeKey<"${input.twoDimensionalAggregation.keySubtype}">`
-          : `"${input.twoDimensionalAggregation.keyType}"`
-      }, "${input.twoDimensionalAggregation.valueType}">`;
+          ? `Query${type}.RangeKey<${
+            JSON.stringify(input.twoDimensionalAggregation.keySubtype)
+          }>`
+          : JSON.stringify(input.twoDimensionalAggregation.keyType)
+      }, ${JSON.stringify(input.twoDimensionalAggregation.valueType)}>`;
       break;
 
     case "threeDimensionalAggregation":
       paramType = `Query${type}.ThreeDimensionalAggregationType<${
         input.threeDimensionalAggregation.keyType === "range"
-          ? `Query${type}.RangeKey<"${input.threeDimensionalAggregation.keySubtype}">`
-          : `"${input.threeDimensionalAggregation.keyType}"`
+          ? `Query${type}.RangeKey<${
+            JSON.stringify(input.threeDimensionalAggregation.keySubtype)
+          }>`
+          : JSON.stringify(input.threeDimensionalAggregation.keyType)
       },${
         input.threeDimensionalAggregation.valueType.keyType === "range"
-          ? `Query${type}.RangeKey<"${input.threeDimensionalAggregation.valueType.keySubtype}">`
-          : `"${input.threeDimensionalAggregation.valueType.keyType}"`
+          ? `Query${type}.RangeKey<${
+            JSON.stringify(
+              input.threeDimensionalAggregation.valueType.keySubtype,
+            )
+          }>`
+          : JSON.stringify(
+            input.threeDimensionalAggregation.valueType.keyType,
+          )
       },
-        "${input.threeDimensionalAggregation.valueType.valueType}">`;
+        ${
+        JSON.stringify(input.threeDimensionalAggregation.valueType.valueType)
+      }>`;
       break;
     case "object":
       if (isMapKey) {
