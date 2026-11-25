@@ -202,33 +202,74 @@ export function common<
     return token;
   }
 
+  let pendingRefresh: Promise<Token | undefined> | undefined;
+  const trackedRefresh = (refresh &&
+    (() => {
+      const p = refresh();
+      pendingRefresh = p;
+      return p;
+    })) as R;
+
   let refreshTimeout: ReturnType<typeof setTimeout>;
   function rmTimeout() {
     if (refreshTimeout) clearTimeout(refreshTimeout);
   }
   function restartRefreshTimer(evt: CustomEvent<Token>) {
-    if (refresh) {
+    if (trackedRefresh) {
       rmTimeout();
       refreshTimeout = setTimeout(
-        refresh,
+        trackedRefresh,
         evt.detail.expires_in * 1000 - 60 * 1000,
       );
     }
   }
 
+  // Revoking the refresh token ends the grant; revoking only the access token
+  // may leave the refresh token usable (RFC 7009 section 2.1).
+  function tokensToRevoke(t: Token | undefined): string[] {
+    const refreshTokens = new Set<string>();
+    if (t?.refresh_token) refreshTokens.add(t.refresh_token);
+    // Another tab sharing this storage may have rotated the refresh token.
+    const stored = readLocal(client, storage).refresh_token;
+    if (stored) refreshTokens.add(stored);
+    if (refreshTokens.size > 0) return [...refreshTokens];
+    return t ? [t.access_token] : [];
+  }
+
   async function signOut() {
     invariant(token, "not signed in");
-
-    const result = await processRevocationResponse(
-      await revocationRequest(as, client, token.access_token, oauthHttpOptions),
-    );
-
     rmTimeout();
 
-    // Clean up
-    removeLocal(client, storage);
-    token = undefined;
-    throwIfError(result);
+    const revoke = new Set<string>();
+    function takeTokens() {
+      try {
+        for (const t of tokensToRevoke(token)) revoke.add(t);
+      } finally {
+        removeLocal(client, storage);
+        token = undefined;
+      }
+    }
+
+    // Clear local state before any await so no new refresh can start from it.
+    takeTokens();
+    // A token request already in flight may still issue tokens; revoke those too.
+    await Promise.allSettled([pendingRefresh, pendingSignIn]);
+    rmTimeout();
+    takeTokens();
+
+    const results = await Promise.allSettled(
+      [...revoke].map(async (t) =>
+        throwIfError(
+          await processRevocationResponse(
+            await revocationRequest(as, client, t, oauthHttpOptions),
+          ),
+        ),
+      ),
+    );
+    const failure = results.find(
+      (r): r is PromiseRejectedResult => r.status === "rejected",
+    );
+    if (failure) throw failure.reason;
     eventTarget.dispatchTypedEvent("signOut", new Event("signOut"));
   }
 
@@ -264,7 +305,7 @@ export function common<
     },
     {
       signIn,
-      refresh,
+      refresh: trackedRefresh,
       signOut,
       rmTimeout,
       getTokenOrUndefined,
