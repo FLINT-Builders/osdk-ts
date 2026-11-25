@@ -18,6 +18,7 @@ import { ExitProcessError } from "@osdk/cli.common";
 import { PalantirApiError } from "@osdk/shared.net.errors";
 
 import { createFetch } from "../createFetch.mjs";
+import { encodePathSegment } from "../encodePathSegment.mjs";
 import type { InternalClientContext } from "../internalClientContext.mjs";
 import type { ThirdPartyAppRid } from "../ThirdPartyAppRid.js";
 import type { Website } from "./Website.mjs";
@@ -28,7 +29,7 @@ export async function getWebsite(
 ): Promise<Website | undefined> {
   const fetch = createFetch(ctx.tokenProvider);
   const urlObj = new URL(
-    `api/v2/thirdPartyApplications/${thirdPartyAppRid}/website`,
+    `api/v2/thirdPartyApplications/${encodePathSegment(thirdPartyAppRid)}/website`,
     ctx.foundryUrl,
   );
   urlObj.searchParams.set("preview", "true");

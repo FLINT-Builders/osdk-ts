@@ -15,6 +15,7 @@
  */
 
 import { createFetch } from "../createFetch.mjs";
+import { encodePathSegment } from "../encodePathSegment.mjs";
 import type { InternalClientContext } from "../internalClientContext.mjs";
 import type { ThirdPartyAppRid } from "../ThirdPartyAppRid.js";
 import type { ListVersionsResponse } from "./ListVersionsResponse.mjs";
@@ -25,7 +26,7 @@ export async function listVersions(
 ): Promise<ListVersionsResponse> {
   const fetch = createFetch(ctx.tokenProvider);
   const urlObj = new URL(
-    `api/v2/thirdPartyApplications/${thirdPartyAppRid}/website/versions`,
+    `api/v2/thirdPartyApplications/${encodePathSegment(thirdPartyAppRid)}/website/versions`,
     ctx.foundryUrl,
   );
   urlObj.searchParams.set("preview", "true");

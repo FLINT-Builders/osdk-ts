@@ -15,6 +15,7 @@
  */
 
 import { createFetch } from "../createFetch.mjs";
+import { encodePathSegment } from "../encodePathSegment.mjs";
 import type { InternalClientContext } from "../internalClientContext.mjs";
 import type { WidgetSetRid } from "../WidgetSetRid.js";
 import type { ListReleasesResponse } from "./ListReleasesResponse.mjs";
@@ -25,7 +26,7 @@ export async function listReleases(
 ): Promise<ListReleasesResponse> {
   const fetch = createFetch(ctx.tokenProvider);
   const urlObj = new URL(
-    `api/v2/widgets/widgetSets/${widgetSetRid}/releases`,
+    `api/v2/widgets/widgetSets/${encodePathSegment(widgetSetRid)}/releases`,
     ctx.foundryUrl,
   );
   urlObj.searchParams.set("preview", "true");
