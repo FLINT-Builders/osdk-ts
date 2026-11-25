@@ -20,15 +20,48 @@
  *
  * Timing goes through `win.setTimeout` so tests can run the deferred
  * blank-check synchronously via a fake window.
+ *
+ * Messages are only ever delivered to `parentOrigin`, or to the preview's own
+ * origin when none is given. The payloads carry error text, stacks and
+ * resource URLs, so they must never be posted with a wildcard target origin.
  */
-export function installReporter(win: Window, doc: Document): void {
+export function installReporter(
+  win: Window,
+  doc: Document,
+  parentOrigin?: string | null,
+): void {
   // No-op unless running inside an iframe.
   if (win.parent === win) return;
+
+  const resolvedOrigin: string | undefined =
+    parentOrigin ?? win.location?.origin;
+  if (
+    typeof resolvedOrigin !== "string" ||
+    resolvedOrigin === "" ||
+    resolvedOrigin === "*" ||
+    resolvedOrigin === "null"
+  ) {
+    return;
+  }
+  const targetOrigin: string = resolvedOrigin;
+
+  // Bail early when the browser reports a different embedder. A "null" entry
+  // (e.g. the embedder's iframe uses a "no-referrer" policy) is not conclusive;
+  // the targetOrigin passed to postMessage still enforces delivery.
+  const ancestors = win.location?.ancestorOrigins;
+  if (
+    ancestors != null &&
+    ancestors.length > 0 &&
+    ancestors[0] !== "null" &&
+    ancestors[0] !== targetOrigin
+  ) {
+    return;
+  }
 
   function post(data: Record<string, unknown>): void {
     data.source = "osdk-preview";
     try {
-      win.parent.postMessage(data, "*");
+      win.parent.postMessage(data, targetOrigin);
     } catch {
       // parent gone or cross-origin refusal; ignore
     }
@@ -94,6 +127,14 @@ export function installReporter(win: Window, doc: Document): void {
 
 /**
  * {@link installReporter} serialized as a self-contained IIFE for injection as
- * an inline classic `<script>`.
+ * an inline classic `<script>`, bound to `parentOrigin` (or to the preview's own
+ * origin when `parentOrigin` is undefined).
  */
-export const REPORTER_SCRIPT: string = `(${installReporter.toString()})(window, document);`;
+export function reporterScript(parentOrigin?: string): string {
+  // Escape "<" so the literal cannot terminate the inline <script> element.
+  const originLiteral = JSON.stringify(parentOrigin ?? null).replaceAll(
+    "<",
+    "\\u003c",
+  );
+  return `(${installReporter.toString()})(window, document, ${originLiteral});`;
+}

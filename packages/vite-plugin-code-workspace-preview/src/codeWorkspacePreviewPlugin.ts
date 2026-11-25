@@ -16,7 +16,7 @@
 
 import type { Plugin } from "vite";
 
-import { REPORTER_SCRIPT } from "./reporterScript.js";
+import { reporterScript } from "./reporterScript.js";
 
 export interface CodeWorkspacePreviewOptions {
   /**
@@ -24,12 +24,47 @@ export interface CodeWorkspacePreviewOptions {
    * dev server mode in Foundry Code Workspaces.
    */
   mode?: string;
+
+  /**
+   * Origin of the Code Workspaces page that embeds the preview, e.g.
+   * "https://example.palantirfoundry.com". Error reports are posted only to
+   * this origin, and only this origin may frame the preview.
+   *
+   * When omitted, reports are posted only to the preview's own origin and
+   * framing is limited to `'self'`.
+   */
+  parentOrigin?: string;
+}
+
+function normalizeParentOrigin(value: string): string {
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    throw new Error(
+      `codeWorkspacePreviewPlugin: parentOrigin must be an absolute http(s) origin, got ${JSON.stringify(
+        value,
+      )}`,
+    );
+  }
+  if (
+    (url.protocol !== "https:" && url.protocol !== "http:") ||
+    url.origin === "null" ||
+    (value !== url.origin && value !== `${url.origin}/`)
+  ) {
+    throw new Error(
+      `codeWorkspacePreviewPlugin: parentOrigin must be an http(s) origin with no path, query, or credentials, got ${JSON.stringify(
+        value,
+      )}`,
+    );
+  }
+  return url.origin;
 }
 
 /**
  * Vite plugin that surfaces runtime errors from the Foundry Code Workspaces
  * preview. When running in the configured mode it injects a small inline script
- * (see {@link REPORTER_SCRIPT}) that posts uncaught errors and unhandled
+ * (see {@link reporterScript}) that posts uncaught errors and unhandled
  * rejections to the parent frame, so a blank preview shows a reason
  * instead of a silent white screen.
  *
@@ -40,9 +75,24 @@ export function codeWorkspacePreviewPlugin(
   options: CodeWorkspacePreviewOptions = {},
 ): Plugin {
   const activeMode = options.mode ?? "code-workspaces";
+  const parentOrigin =
+    options.parentOrigin == null
+      ? undefined
+      : normalizeParentOrigin(options.parentOrigin);
+  const script = reporterScript(parentOrigin);
+  const frameAncestors = `frame-ancestors ${parentOrigin ?? "'self'"}`;
   return {
     name: "osdk-code-workspace-preview",
     apply: "serve",
+    configureServer(server) {
+      if (server.config.mode !== activeMode) {
+        return;
+      }
+      server.middlewares.use((_req, res, next) => {
+        res.setHeader("Content-Security-Policy", frameAncestors);
+        next();
+      });
+    },
     transformIndexHtml(_html, ctx) {
       // ctx.server is present during serve; guard defensively regardless.
       if (ctx.server?.config.mode !== activeMode) {
@@ -51,7 +101,7 @@ export function codeWorkspacePreviewPlugin(
       return [
         {
           tag: "script",
-          children: REPORTER_SCRIPT,
+          children: script,
           injectTo: "head-prepend",
         },
       ];
