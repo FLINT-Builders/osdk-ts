@@ -38,6 +38,57 @@ import { loadSdkInput } from "./loadSdkInput.js";
 
 const PYTHON_SDK_PACKAGE_NAME = "ontology_sdk";
 
+// Isolated mode (-I) keeps the working directory, PYTHON* environment variables
+// and the user site-packages off sys.path, so files in the project cannot
+// shadow startup hooks or the modules run with -m. On Python 3.11+ it implies
+// -P; -P is not passed separately because older interpreters reject it.
+const PYTHON_ISOLATED_FLAGS = ["-I"] as const;
+
+const SITE_PACKAGES_SCRIPT =
+  "import json, site, sys; print(json.dumps([site.getsitepackages()[0], sys.prefix]))";
+
+/**
+ * Resolves the site-packages directory reported by the interpreter, accepting
+ * it only if it is an existing directory inside the interpreter's prefix.
+ * Returns the real path so that later file operations act on the same
+ * directory that was validated.
+ */
+function resolveSitePackages(stdout: string): string | undefined {
+  const lastLine = stdout.trim().split(/\r?\n/).pop() ?? "";
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(lastLine);
+  } catch {
+    return undefined;
+  }
+  if (
+    !Array.isArray(parsed) || parsed.length !== 2
+    || typeof parsed[0] !== "string" || typeof parsed[1] !== "string"
+    || !path.isAbsolute(parsed[0]) || !path.isAbsolute(parsed[1])
+  ) {
+    return undefined;
+  }
+  let realSitePackages: string;
+  let realPrefix: string;
+  try {
+    realSitePackages = fsSync.realpathSync(parsed[0]);
+    realPrefix = fsSync.realpathSync(parsed[1]);
+    if (!fsSync.statSync(realSitePackages).isDirectory()) {
+      return undefined;
+    }
+  } catch {
+    return undefined;
+  }
+  const relative = path.relative(realPrefix, realSitePackages);
+  if (
+    relative === "" || relative === ".."
+    || relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative)
+  ) {
+    return undefined;
+  }
+  return realSitePackages;
+}
+
 /**
  * Generates the Python SDK package into the conda environment's site-packages
  * so that Python function discovery can resolve ontology type imports.
@@ -68,84 +119,116 @@ function generatePythonSdk(
 
   const ontologyApiName = previewMetadata.ontology?.apiName ?? "ontology";
 
-  // Discover site-packages from the conda environment
-  const siteResult = spawnSync(
-    pythonBinary,
-    ["-c", "import site; print(site.getsitepackages()[0])"],
-    { encoding: "utf-8" },
-  );
-  if (siteResult.status !== 0 || !siteResult.stdout?.trim()) {
-    consola.warn(
-      `Could not discover Python site-packages: ${
-        siteResult.stderr || siteResult.error
-      }`,
-    );
-    return;
-  }
-  const sitePackages = siteResult.stdout.trim();
-  consola.info(`Python site-packages: ${sitePackages}`);
-
-  // Write metadata to a temp file for the generator
+  // Python runs from an empty directory so nothing in the directory the CLI
+  // was launched from can influence it.
   const tmpDir = fsSync.mkdtempSync(path.join(os.tmpdir(), "python-sdk-"));
-  const tmpMetadata = path.join(tmpDir, "metadata.json");
-  fsSync.writeFileSync(
-    tmpMetadata,
-    JSON.stringify(pythonMetadata, null, 2),
-    "utf-8",
-  );
+  try {
+    const pythonCwd = path.join(tmpDir, "cwd");
+    const generatorOutputDir = path.join(tmpDir, "out");
+    fsSync.mkdirSync(pythonCwd);
+    fsSync.mkdirSync(generatorOutputDir);
 
-  // Run the Python SDK generator into the temp directory.
-  // The generator creates <output-dir>/ontology_sdk/ which is a project
-  // directory containing ontology_sdk/ (the actual Python package), setup.py, etc.
-  consola.info("Generating Python SDK...");
-  const packageName = PYTHON_SDK_PACKAGE_NAME;
-  const genResult = spawnSync(
-    pythonBinary,
-    [
-      "-m",
-      "foundry_sdk_generator",
-      "generate_package",
-      "--output-dir",
-      tmpDir,
-      "--package-name",
-      packageName,
-      "--package-version",
-      "0.0.0",
-      "--ontology",
-      ontologyApiName,
-      "--object-types",
-      ...objectTypes,
-      "--cache-path",
-      tmpMetadata,
-      "--force",
-    ],
-    { encoding: "utf-8", stdio: "pipe" },
-  );
-
-  if (genResult.status !== 0) {
-    consola.warn(
-      `Python SDK generation failed (non-fatal): ${
-        genResult.stderr || genResult.stdout
-      }`,
+    // Discover site-packages from the conda environment
+    const siteResult = spawnSync(
+      pythonBinary,
+      [...PYTHON_ISOLATED_FLAGS, "-c", SITE_PACKAGES_SCRIPT],
+      { cwd: pythonCwd, encoding: "utf-8" },
     );
+    if (siteResult.status !== 0 || !siteResult.stdout?.trim()) {
+      consola.warn(
+        `Could not discover Python site-packages: ${
+          siteResult.stderr || siteResult.error
+        }`,
+      );
+      return;
+    }
+    const sitePackages = resolveSitePackages(siteResult.stdout);
+    if (sitePackages == null) {
+      consola.warn(
+        `Python reported an invalid site-packages location: ${siteResult.stdout.trim()}`,
+      );
+      return;
+    }
+    consola.info(`Python site-packages: ${sitePackages}`);
+
+    // Write metadata to a temp file for the generator
+    const tmpMetadata = path.join(tmpDir, "metadata.json");
+    fsSync.writeFileSync(
+      tmpMetadata,
+      JSON.stringify(pythonMetadata, null, 2),
+      "utf-8",
+    );
+
+    // Run the Python SDK generator into the temp directory.
+    // The generator creates <output-dir>/ontology_sdk/ which is a project
+    // directory containing ontology_sdk/ (the actual Python package), setup.py, etc.
+    consola.info("Generating Python SDK...");
+    const packageName = PYTHON_SDK_PACKAGE_NAME;
+    const genResult = spawnSync(
+      pythonBinary,
+      [
+        ...PYTHON_ISOLATED_FLAGS,
+        "-m",
+        "foundry_sdk_generator",
+        "generate_package",
+        "--output-dir",
+        generatorOutputDir,
+        "--package-name",
+        packageName,
+        "--package-version",
+        "0.0.0",
+        "--ontology",
+        ontologyApiName,
+        "--object-types",
+        ...objectTypes,
+        "--cache-path",
+        tmpMetadata,
+        "--force",
+      ],
+      { cwd: pythonCwd, encoding: "utf-8", stdio: "pipe" },
+    );
+
+    if (genResult.status !== 0) {
+      consola.warn(
+        `Python SDK generation failed (non-fatal): ${
+          genResult.stderr || genResult.stdout
+        }`,
+      );
+      return;
+    }
+
+    // The generator creates <output-dir>/ontology_sdk/ontology_sdk/ (the
+    // importable package). Copy just the inner package into site-packages so
+    // Python can resolve `import ontology_sdk`.
+    const generatedPackage = path.join(
+      generatorOutputDir,
+      packageName,
+      packageName,
+    );
+    if (!isRealDirectory(generatedPackage)) {
+      consola.warn(
+        `Python SDK generation did not produce ${generatedPackage} (non-fatal).`,
+      );
+      return;
+    }
+    const destPackage = path.join(sitePackages, packageName);
+
+    // Remove any previous version
+    fsSync.rmSync(destPackage, { recursive: true, force: true });
+    fsSync.cpSync(generatedPackage, destPackage, { recursive: true });
+
+    consola.info(`Python SDK installed to ${destPackage}`);
+  } finally {
     fsSync.rmSync(tmpDir, { recursive: true, force: true });
-    return;
   }
+}
 
-  // The generator creates <tmpDir>/ontology_sdk/ontology_sdk/ (the importable
-  // package). Copy just the inner package into site-packages so Python can
-  // resolve `import ontology_sdk`.
-  const generatedPackage = path.join(tmpDir, packageName, packageName);
-  const destPackage = path.join(sitePackages, packageName);
-
-  // Remove any previous version
-  fsSync.rmSync(destPackage, { recursive: true, force: true });
-  fsSync.cpSync(generatedPackage, destPackage, { recursive: true });
-
-  // Clean up temp directory
-  fsSync.rmSync(tmpDir, { recursive: true, force: true });
-
-  consola.info(`Python SDK installed to ${destPackage}`);
+function isRealDirectory(dirPath: string): boolean {
+  try {
+    return fsSync.lstatSync(dirPath).isDirectory();
+  } catch {
+    return false;
+  }
 }
 
 async function main(): Promise<void> {
