@@ -116,9 +116,13 @@ function discoverPythonFunctions(
     );
   }
 
+  // Isolated mode (-I) keeps the working directory, PYTHON* environment
+  // variables and the user site-packages off sys.path, so a `functions`
+  // package or startup hook in the project cannot shadow the installed one.
   const result = spawnSync(
     pythonPath,
     [
+      "-I",
       "-m",
       "functions.bin",
       "parse",
