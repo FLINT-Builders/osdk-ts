@@ -24,7 +24,7 @@ import type {
 import { describe, expect, it } from "vitest";
 
 import { codeWorkspacePreviewPlugin } from "./codeWorkspacePreviewPlugin.js";
-import { installReporter, REPORTER_SCRIPT } from "./reporterScript.js";
+import { installReporter, reporterScript } from "./reporterScript.js";
 
 function runTransform(
   plugin: Plugin,
@@ -53,8 +53,34 @@ describe("codeWorkspacePreviewPlugin", () => {
   it("injects the reporter as a head-prepend script in code-workspaces mode", () => {
     const plugin = codeWorkspacePreviewPlugin();
     expect(runTransform(plugin, "code-workspaces")).toEqual([
-      { tag: "script", children: REPORTER_SCRIPT, injectTo: "head-prepend" },
+      { tag: "script", children: reporterScript(), injectTo: "head-prepend" },
     ]);
+  });
+
+  it("binds the reporter to a configured parent origin", () => {
+    const plugin = codeWorkspacePreviewPlugin({
+      parentOrigin: "https://parent.example/",
+    });
+    expect(runTransform(plugin, "code-workspaces")).toEqual([
+      {
+        tag: "script",
+        children: reporterScript("https://parent.example"),
+        injectTo: "head-prepend",
+      },
+    ]);
+  });
+
+  it("rejects a parent origin that is not a single http(s) origin", () => {
+    for (const parentOrigin of [
+      "*",
+      "null",
+      "parent.example",
+      "https://parent.example/path",
+      "https://user:pass@parent.example",
+      "file:///tmp/preview",
+    ]) {
+      expect(() => codeWorkspacePreviewPlugin({ parentOrigin })).toThrow();
+    }
   });
 
   it("honors a custom activation mode", () => {
@@ -81,6 +107,7 @@ interface Poster {
 }
 interface FakeWindow extends Poster {
   parent: Poster;
+  location: { origin: string; ancestorOrigins?: string[] };
   addEventListener(type: string, listener: Listener, capture?: boolean): void;
   setTimeout(handler: () => void): void;
 }
@@ -93,23 +120,38 @@ interface FakeDocument {
  * what it posts to the parent frame without a full DOM. The fake window's
  * setTimeout runs synchronously so the deferred blank-check resolves at once.
  */
-function runReporter(options: { framed: boolean; hasContent?: boolean }): {
+const PREVIEW_ORIGIN = "https://preview.example";
+
+function runReporter(options: {
+  framed: boolean;
+  hasContent?: boolean;
+  parentOrigin?: string;
+  ancestorOrigins?: string[];
+}): {
   posted: PostedMessage[];
+  targetOrigins: string[];
   listeners: Map<string, Listener>;
   win: FakeWindow;
 } {
   const posted: PostedMessage[] = [];
+  const targetOrigins: string[] = [];
   const listeners = new Map<string, Listener>();
   const parentFrame: Poster = {
-    postMessage: (data) => {
+    postMessage: (data, targetOrigin) => {
       posted.push(data);
+      targetOrigins.push(targetOrigin);
     },
   };
   const win: FakeWindow = {
-    postMessage: (data) => {
+    postMessage: (data, targetOrigin) => {
       posted.push(data);
+      targetOrigins.push(targetOrigin);
     },
     parent: parentFrame,
+    location: {
+      origin: PREVIEW_ORIGIN,
+      ancestorOrigins: options.ancestorOrigins,
+    },
     addEventListener: (type, listener) => {
       listeners.set(type, listener);
     },
@@ -125,14 +167,61 @@ function runReporter(options: { framed: boolean; hasContent?: boolean }): {
         ? { childElementCount: options.hasContent === true ? 1 : 0 }
         : null,
   };
-  installReporter(win as unknown as Window, document as unknown as Document);
-  return { posted, listeners, win };
+  installReporter(
+    win as unknown as Window,
+    document as unknown as Document,
+    options.parentOrigin,
+  );
+  return { posted, targetOrigins, listeners, win };
 }
 
 describe("installReporter", () => {
   it("posts a ready message on load when framed", () => {
     const { posted } = runReporter({ framed: true });
     expect(posted[0]).toMatchObject({ source: "osdk-preview", kind: "ready" });
+  });
+
+  it("posts only to the preview's own origin when no parent origin is given", () => {
+    const { targetOrigins, listeners, win } = runReporter({
+      framed: true,
+      hasContent: false,
+    });
+    listeners.get("error")?.({ target: win, message: "boom" });
+    expect(targetOrigins).toEqual([PREVIEW_ORIGIN, PREVIEW_ORIGIN]);
+  });
+
+  it("posts only to the configured parent origin", () => {
+    const { targetOrigins, listeners, win } = runReporter({
+      framed: true,
+      hasContent: false,
+      parentOrigin: "https://parent.example",
+    });
+    listeners.get("error")?.({ target: win, message: "boom" });
+    listeners.get("unhandledrejection")?.({ reason: "nope" });
+    expect(targetOrigins).toEqual([
+      "https://parent.example",
+      "https://parent.example",
+      "https://parent.example",
+    ]);
+  });
+
+  it("does nothing when the reported embedder is a different origin", () => {
+    const { posted, listeners } = runReporter({
+      framed: true,
+      parentOrigin: "https://parent.example",
+      ancestorOrigins: ["https://attacker.example"],
+    });
+    expect(posted).toHaveLength(0);
+    expect(listeners.size).toBe(0);
+  });
+
+  it("refuses a wildcard parent origin", () => {
+    const { posted, listeners } = runReporter({
+      framed: true,
+      parentOrigin: "*",
+    });
+    expect(posted).toHaveLength(0);
+    expect(listeners.size).toBe(0);
   });
 
   it("does nothing when not running inside an iframe", () => {
@@ -207,15 +296,17 @@ describe("installReporter", () => {
   });
 });
 
-describe("REPORTER_SCRIPT", () => {
+describe("reporterScript", () => {
   // Guards the installReporter.toString() serialization: the emitted IIFE must
   // be self-contained and runnable verbatim in the browser (no references to
   // module-level names, transpiler helpers, etc.).
-  it("runs verbatim as a self-contained IIFE and posts ready when framed", () => {
+  it("runs verbatim as a self-contained IIFE and posts ready to the bound origin when framed", () => {
     const posted: PostedMessage[] = [];
+    const targetOrigins: string[] = [];
     const parentFrame: Poster = {
-      postMessage: (data) => {
+      postMessage: (data, targetOrigin) => {
         posted.push(data);
+        targetOrigins.push(targetOrigin);
       },
     };
     const win = {
@@ -223,15 +314,21 @@ describe("REPORTER_SCRIPT", () => {
         posted.push(data);
       },
       parent: parentFrame,
+      location: { origin: PREVIEW_ORIGIN },
       addEventListener: () => {},
       setTimeout: (fn: () => void) => {
         fn();
       },
     };
-    runInNewContext(REPORTER_SCRIPT, {
+    runInNewContext(reporterScript("https://parent.example"), {
       window: win,
       document: { querySelector: () => null },
     });
     expect(posted[0]).toMatchObject({ source: "osdk-preview", kind: "ready" });
+    expect(targetOrigins).toEqual(["https://parent.example"]);
+  });
+
+  it("cannot break out of the inline script element", () => {
+    expect(reporterScript("https://parent.example")).not.toContain("</");
   });
 });
