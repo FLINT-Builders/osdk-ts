@@ -16,6 +16,7 @@
 
 import { consola } from "../consola.js";
 import { italic } from "../highlight.js";
+import { APPLICATION_URL_REGEX, assertNoLineBreaks } from "../validation.js";
 
 export async function promptApplicationUrl({
   skipApplicationUrl,
@@ -49,8 +50,12 @@ export async function promptApplicationUrl({
     }
   }
 
-  while (applicationUrl == null || !/^https?:\/\//u.test(applicationUrl)) {
+  while (
+    applicationUrl == null ||
+    !APPLICATION_URL_REGEX.test(applicationUrl)
+  ) {
     if (applicationUrl != null) {
+      assertNoLineBreaks("Application URL", applicationUrl);
       consola.fail("Please enter a valid application URL");
     }
     applicationUrl = await consola.prompt(

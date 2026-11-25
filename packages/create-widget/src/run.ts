@@ -24,6 +24,7 @@ import { generateFoundryConfigJson } from "./generate/generateFoundryConfigJson.
 import { generateNpmRc } from "./generate/generateNpmRc.js";
 import { green } from "./highlight.js";
 import type { SdkVersion, Template, TemplateContext } from "./templates.js";
+import { validateRunArgs } from "./validation.js";
 
 interface RunArgs {
   project: string;
@@ -48,6 +49,14 @@ export async function run({
   osdkPackage,
   osdkRegistryUrl,
 }: RunArgs): Promise<void> {
+  validateRunArgs({
+    project,
+    foundryUrl,
+    widgetSet,
+    osdkPackage,
+    osdkRegistryUrl,
+  });
+
   consola.log("");
   consola.start(
     `Creating project ${green(project)} using template ${green(template.id)}`,

@@ -16,17 +16,16 @@
 
 import { consola } from "../consola.js";
 import { italic } from "../highlight.js";
+import { assertNoLineBreaks, WIDGET_SET_RID_REGEX } from "../validation.js";
 
 export async function promptWidgetSetRid({
   widgetSet,
 }: {
   widgetSet?: string;
 }): Promise<string> {
-  while (
-    widgetSet == null ||
-    !/^ri\.widgetregistry\.\.widget-set\.[^.]+$/u.test(widgetSet)
-  ) {
+  while (widgetSet == null || !WIDGET_SET_RID_REGEX.test(widgetSet)) {
     if (widgetSet != null) {
+      assertNoLineBreaks("Widget set resource identifier", widgetSet);
       consola.fail("Please enter a valid widget resource identifier (rid)");
     }
     widgetSet = await consola.prompt(
