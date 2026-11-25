@@ -22,6 +22,7 @@ import type { WireOntologyDefinition } from "../WireOntologyDefinition.js";
 import {
   generateOntologyMetadataJSONFile,
   generateOntologyMetadataTypeFile,
+  validateOntologyMetadataIdentifiers,
 } from "./generateMetadata.js";
 import { generatePerActionDataFiles } from "./generatePerActionDataFiles.js";
 import { generatePerInterfaceDataFiles } from "./generatePerInterfaceDataFiles.js";
@@ -47,9 +48,7 @@ export async function generateClientSdkVersionTwoPointZero(
   // Structurally, we need to have multiple ontologies read in
   // with one per package.
 
-  await verifyOutDir(outDir, fs);
-
-  await fs.mkdir(outDir, { recursive: true });
+  validateOntologyMetadataIdentifiers(ontology);
   const enhancedOntology = enhanceOntology({
     sanitized: ontology,
     importExt,
@@ -57,6 +56,10 @@ export async function generateClientSdkVersionTwoPointZero(
     externalInterfaces,
     externalSpts,
   });
+
+  await verifyOutDir(outDir, fs);
+
+  await fs.mkdir(outDir, { recursive: true });
 
   const ctx: GenerateContext = {
     ontology: enhancedOntology,

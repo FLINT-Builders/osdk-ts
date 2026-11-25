@@ -18,7 +18,7 @@ import type { WireOntologyDefinition } from "../../WireOntologyDefinition.js";
 
 export const TodoWireOntology: WireOntologyDefinition = {
   ontology: {
-    rid: "ridHere",
+    rid: "ri.ontology.main.ontology.ridHere",
     apiName: "OntologyApiName",
     displayName: "",
     description: "",

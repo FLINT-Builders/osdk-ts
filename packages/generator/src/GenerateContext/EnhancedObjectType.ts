@@ -17,12 +17,14 @@
 import type { ObjectMetadata } from "@osdk/api";
 import type { ObjectTypeFullMetadata } from "@osdk/foundry.ontologies";
 import { wireObjectTypeFullMetadataToSdkObjectMetadata } from "@osdk/generator-converters";
+import { assertIdentifier } from "../util/validateGeneratedIdentifiers.js";
 import type { EnhanceCommon } from "./EnhanceCommon.js";
 import { EnhancedBase } from "./EnhancedBase.js";
 
 export class EnhancedObjectType extends EnhancedBase<ObjectTypeFullMetadata> {
   constructor(common: EnhanceCommon, public raw: ObjectTypeFullMetadata) {
     super(common, raw, raw.objectType.apiName, "./ontology/objects");
+    assertIdentifier(this.shortApiName, "objectTypes");
   }
 
   getDefinitionIdentifier(v2: boolean): string {

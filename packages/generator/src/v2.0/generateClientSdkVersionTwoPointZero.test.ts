@@ -345,7 +345,7 @@ const referencedOntology = {
     },
   },
   branch: {
-    rid: "someRidHere",
+    rid: "ri.branch..branch.someRidHere",
   },
   valueTypes: {},
 } satisfies WireOntologyDefinition;
@@ -561,7 +561,7 @@ describe("generator", () => {
           "/foo/OntologyMetadata.ts": "export type $ExpectedClientVersion = 'PLACEHOLDER';
         export const $osdkMetadata = { extraUserAgent: 'typescript-sdk/0.0.0 osdk-cli/0.0.0' };
 
-        export const $ontologyRid = 'ridHere';
+        export const $ontologyRid = 'ri.ontology.main.ontology.ridHere';
         /**
          * The RID of the Foundry branch this SDK was generated against, or
          * \`undefined\` if it was generated against the main branch.
@@ -1263,7 +1263,7 @@ describe("generator", () => {
           "/foo/OntologyMetadata.ts": "export type $ExpectedClientVersion = 'PLACEHOLDER';
         export const $osdkMetadata = { extraUserAgent: '' };
 
-        export const $ontologyRid = 'ridHere';
+        export const $ontologyRid = 'ri.ontology.main.ontology.ridHere';
         /**
          * The RID of the Foundry branch this SDK was generated against, or
          * \`undefined\` if it was generated against the main branch.
@@ -2394,7 +2394,7 @@ describe("generator", () => {
           "/foo/OntologyMetadata.ts": "export type $ExpectedClientVersion = 'PLACEHOLDER';
         export const $osdkMetadata = { extraUserAgent: 'typescript-sdk/0.0.0 osdk-cli/0.0.0' };
 
-        export const $ontologyRid = 'ridHere';
+        export const $ontologyRid = 'ri.ontology.main.ontology.ridHere';
         /**
          * The RID of the Foundry branch this SDK was generated against, or
          * \`undefined\` if it was generated against the main branch.
@@ -2804,7 +2804,7 @@ describe("generator", () => {
          * The RID of the Foundry branch this SDK was generated against, or
          * \`undefined\` if it was generated against the main branch.
          */
-        export const $branch: string | undefined = 'someRidHere';
+        export const $branch: string | undefined = 'ri.branch..branch.someRidHere';
         ",
           "/foo/index.ts": "export {} from './ontology/actions.js';
         export * as $Actions from './ontology/actions.js';

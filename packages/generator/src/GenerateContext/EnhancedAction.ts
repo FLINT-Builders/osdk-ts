@@ -15,6 +15,7 @@
  */
 
 import type { ActionTypeV2, LogicRule } from "@osdk/foundry.ontologies";
+import { assertIdentifier } from "../util/validateGeneratedIdentifiers.js";
 import type { EnhanceCommon } from "./EnhanceCommon.js";
 import { EnhancedBase } from "./EnhancedBase.js";
 
@@ -24,6 +25,7 @@ export class EnhancedAction extends EnhancedBase<ActionTypeV2> {
     const unsanitizedApiName = raw.apiName;
     raw = { ...raw, apiName: camelize(raw.apiName) };
     super(common, raw, raw.apiName, "./ontology/actions");
+    assertIdentifier(this.shortApiName, "actionTypes");
     this.#unsanitizedApiName = unsanitizedApiName;
   }
 

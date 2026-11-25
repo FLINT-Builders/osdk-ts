@@ -18,10 +18,21 @@ import path from "node:path";
 
 import type { GenerateContext } from "../GenerateContext/GenerateContext.js";
 import { formatTs } from "../util/test/formatTs.js";
+import { assertResourceIdentifier } from "../util/validateGeneratedIdentifiers.js";
+import type { WireOntologyDefinition } from "../WireOntologyDefinition.js";
 
 // BEGIN: THIS IS GENERATED CODE. DO NOT EDIT.
 const ExpectedOsdkVersion = "2.70.0";
 // END: THIS IS GENERATED CODE. DO NOT EDIT.
+
+export function validateOntologyMetadataIdentifiers(
+  ontology: WireOntologyDefinition,
+): void {
+  assertResourceIdentifier(ontology.ontology?.rid, "ontology.rid");
+  if (ontology.branch != null) {
+    assertResourceIdentifier(ontology.branch.rid, "branch.rid");
+  }
+}
 
 export async function generateOntologyMetadataTypeFile(
   { fs, outDir, ontology, ontologyApiNamespace }: GenerateContext,
@@ -31,19 +42,23 @@ export async function generateOntologyMetadataTypeFile(
     path.join(outDir, "OntologyMetadata.ts"),
     await formatTs(
       `
-      export type $ExpectedClientVersion = "${ExpectedOsdkVersion}";
-      export const $osdkMetadata = { extraUserAgent: "${userAgent}" };
+      export type $ExpectedClientVersion = ${
+        JSON.stringify(ExpectedOsdkVersion)
+      };
+      export const $osdkMetadata = { extraUserAgent: ${
+        JSON.stringify(userAgent)
+      } };
       ${
         ontologyApiNamespace == null
           ? `
-        export const $ontologyRid = "${ontology.ontology.rid}";
+        export const $ontologyRid = ${JSON.stringify(ontology.ontology.rid)};
         /**
          * The RID of the Foundry branch this SDK was generated against, or
          * \`undefined\` if it was generated against the main branch.
          */
         export const $branch: string | undefined = ${
             ontology.raw.branch != null
-              ? `"${ontology.raw.branch.rid}"`
+              ? JSON.stringify(ontology.raw.branch.rid)
               : "undefined"
           };
         `
