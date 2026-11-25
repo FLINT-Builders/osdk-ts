@@ -16,6 +16,7 @@
 
 import { consola } from "../consola.js";
 import { italic } from "../highlight.js";
+import { isValidApplicationUrl } from "../validation.js";
 
 export async function promptApplicationUrl({
   skipApplicationUrl,
@@ -49,7 +50,7 @@ export async function promptApplicationUrl({
     }
   }
 
-  while (applicationUrl == null || !/^https?:\/\//u.test(applicationUrl)) {
+  while (applicationUrl == null || !isValidApplicationUrl(applicationUrl)) {
     if (applicationUrl != null) {
       consola.fail("Please enter a valid application URL");
     }
