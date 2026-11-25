@@ -169,9 +169,26 @@ export function common<
     resp: OAuth2TokenEndpointResponse,
     type: "signIn" | "refresh",
   ) => Token;
+  startTokenRequest: () => () => void;
 } {
   let token: Token | undefined;
+  // Incremented by every signOut so token requests that were already in
+  // flight cannot store their result into the ended session.
+  let sessionEpoch = 0;
   const eventTarget = new TypedEventTarget<Events>();
+
+  /**
+   * Call before starting a token request. The returned function throws if
+   * signOut ran since; call it synchronously before storing the response.
+   */
+  function startTokenRequest(): () => void {
+    const epoch = sessionEpoch;
+    return () => {
+      if (epoch !== sessionEpoch) {
+        throw new Error("Signed out while the token request was in flight");
+      }
+    };
+  }
 
   function makeTokenAndSaveRefresh(
     resp: OAuth2TokenEndpointResponse,
@@ -217,19 +234,42 @@ export function common<
   }
 
   async function signOut() {
-    invariant(token, "not signed in");
+    // End the local session before any network request so that a failed or
+    // pending revocation cannot leave a usable refresh token behind.
+    const signedOutToken = token;
+    const hadPendingSignIn = pendingSignIn != null;
+    sessionEpoch++;
+    pendingSignIn = undefined;
+    rmTimeout();
+    token = undefined;
+    let storedRefreshToken: string | undefined;
+    try {
+      storedRefreshToken = readLocal(client, storage).refresh_token;
+    } finally {
+      removeLocal(client, storage);
+    }
 
-    const result = await processRevocationResponse(
-      await revocationRequest(as, client, token.access_token, oauthHttpOptions),
+    invariant(
+      signedOutToken != null || storedRefreshToken != null || hadPendingSignIn,
+      "not signed in",
     );
 
-    rmTimeout();
-
-    // Clean up
-    removeLocal(client, storage);
-    token = undefined;
-    throwIfError(result);
-    eventTarget.dispatchTypedEvent("signOut", new Event("signOut"));
+    try {
+      if (signedOutToken != null) {
+        throwIfError(
+          await processRevocationResponse(
+            await revocationRequest(
+              as,
+              client,
+              signedOutToken.access_token,
+              oauthHttpOptions,
+            ),
+          ),
+        );
+      }
+    } finally {
+      eventTarget.dispatchTypedEvent("signOut", new Event("signOut"));
+    }
   }
 
   let pendingSignIn: Promise<Token> | undefined;
@@ -237,11 +277,14 @@ export function common<
     if (pendingSignIn) {
       return pendingSignIn;
     }
+    const attempt = _signIn();
+    pendingSignIn = attempt;
     try {
-      pendingSignIn = _signIn();
-      return await pendingSignIn;
+      return await attempt;
     } finally {
-      pendingSignIn = undefined;
+      if (pendingSignIn === attempt) {
+        pendingSignIn = undefined;
+      }
     }
   }
 
@@ -258,7 +301,10 @@ export function common<
   const getToken = Object.assign(
     async function getToken() {
       if (!token || Date.now() >= token.expires_at) {
-        token = await signIn();
+        const assertSessionUnchanged = startTokenRequest();
+        const next = await signIn();
+        assertSessionUnchanged();
+        token = next;
       }
       return token?.access_token;
     },
@@ -277,7 +323,7 @@ export function common<
     },
   );
 
-  return { getToken, makeTokenAndSaveRefresh };
+  return { getToken, makeTokenAndSaveRefresh, startTokenRequest };
 }
 
 export function createAuthorizationServer(

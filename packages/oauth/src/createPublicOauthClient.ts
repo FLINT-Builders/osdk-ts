@@ -197,7 +197,7 @@ export function createPublicOauthClient(
 
   const storage = getStorage(tokenStorage);
 
-  const { makeTokenAndSaveRefresh, getToken } = common(
+  const { makeTokenAndSaveRefresh, getToken, startTokenRequest } = common(
     client,
     authServer,
     _signIn,
@@ -227,6 +227,7 @@ export function createPublicOauthClient(
       return;
     }
 
+    const assertSessionUnchanged = startTokenRequest();
     const {
       refresh_token,
       refreshTokenMarker: lastRefreshTokenMarker,
@@ -248,21 +249,20 @@ export function createPublicOauthClient(
     try {
       // note, we don't use processRefreshTokenResponse because the mp oauth implementation
       // doesn't do refresh tokens quite right and this lets us skip the id check
-      const result = makeTokenAndSaveRefresh(
-        throwIfError(
-          await processAuthorizationCodeOAuth2Response(
+      const response = throwIfError(
+        await processAuthorizationCodeOAuth2Response(
+          authServer,
+          client,
+          await refreshTokenGrantRequest(
             authServer,
             client,
-            await refreshTokenGrantRequest(
-              authServer,
-              client,
-              refresh_token,
-              oauthHttpOptions,
-            ),
+            refresh_token,
+            oauthHttpOptions,
           ),
         ),
-        "refresh",
       );
+      assertSessionUnchanged();
+      const result = makeTokenAndSaveRefresh(response, "refresh");
 
       if (
         result &&
@@ -291,31 +291,31 @@ export function createPublicOauthClient(
     const { state, oldUrl, codeVerifier } = readSession(client);
     if (!codeVerifier) return;
 
+    const assertSessionUnchanged = startTokenRequest();
     try {
-      const ret = makeTokenAndSaveRefresh(
-        throwIfError(
-          await processAuthorizationCodeOAuth2Response(
+      const response = throwIfError(
+        await processAuthorizationCodeOAuth2Response(
+          authServer,
+          client,
+          await authorizationCodeGrantRequest(
             authServer,
             client,
-            await authorizationCodeGrantRequest(
-              authServer,
-              client,
-              throwIfError(
-                validateAuthResponse(
-                  authServer,
-                  client,
-                  new URL(window.location.href),
-                  state,
-                ),
+            throwIfError(
+              validateAuthResponse(
+                authServer,
+                client,
+                new URL(window.location.href),
+                state,
               ),
-              redirect_uri,
-              codeVerifier,
-              oauthHttpOptions,
             ),
+            redirect_uri,
+            codeVerifier,
+            oauthHttpOptions,
           ),
         ),
-        "signIn",
       );
+      assertSessionUnchanged();
+      const ret = makeTokenAndSaveRefresh(response, "signIn");
 
       void go(oldUrl);
       return ret;
