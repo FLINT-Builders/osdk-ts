@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import path from "node:path";
+
 import type { WidgetSetConfig } from "@osdk/foundry-config-json";
 import { MANIFEST_FILE_LOCATION } from "@osdk/widget.api";
 import type { CommandModule } from "yargs";
@@ -61,7 +63,13 @@ const command: CommandModule<CommonWidgetSetArgs, WidgetSetDeployArgs> = {
   },
   handler: async (args) => {
     const command = await import("./widgetSetDeployCommand.mjs");
-    await command.default(args);
+    const config = await configLoader("widgetSet");
+    const projectRoot =
+      config != null &&
+      args.directory === config.foundryConfig.widgetSet.directory
+        ? path.dirname(config.configFilePath)
+        : undefined;
+    await command.default({ ...args, projectRoot });
   },
 };
 
