@@ -17,6 +17,7 @@
 import { consola } from "../consola.js";
 import { italic } from "../highlight.js";
 import type { SdkVersion } from "../templates.js";
+import { ONTOLOGY_RID_REGEX, parseOsdkRegistryUrl } from "../validate.js";
 
 export async function promptOntologyAndOsdkPackageAndOsdkRegistryUrl({
   ontology,
@@ -64,10 +65,7 @@ export async function promptOntologyAndOsdkPackageAndOsdkRegistryUrl({
     }
   }
 
-  while (
-    ontology == null ||
-    !/^ri\.ontology\.[^.]+\.ontology\.[^.]+$/u.test(ontology)
-  ) {
+  while (ontology == null || !ONTOLOGY_RID_REGEX.test(ontology)) {
     if (ontology != null) {
       consola.fail("Please enter a valid Ontology resource identifier (rid)");
     }
@@ -91,12 +89,9 @@ export async function promptOntologyAndOsdkPackageAndOsdkRegistryUrl({
     );
   }
 
-  while (
-    osdkRegistryUrl == null ||
-    !/^https:\/\/[^/]+\/artifacts\/api\/repositories\/ri\.artifacts\.[^/]+\/contents\/release\/npm\/?$/u.test(
-      osdkRegistryUrl,
-    )
-  ) {
+  let parsedOsdkRegistryUrl =
+    osdkRegistryUrl == null ? undefined : parseOsdkRegistryUrl(osdkRegistryUrl);
+  while (parsedOsdkRegistryUrl == null) {
     if (osdkRegistryUrl != null) {
       consola.fail(
         "Please enter a valid NPM registry URL to install your OSDK package",
@@ -108,11 +103,12 @@ export async function promptOntologyAndOsdkPackageAndOsdkRegistryUrl({
       )}`,
       { type: "text" },
     );
+    parsedOsdkRegistryUrl = parseOsdkRegistryUrl(osdkRegistryUrl);
   }
 
   return {
     ontology,
     osdkPackage,
-    osdkRegistryUrl: osdkRegistryUrl.replace(/\/$/u, ""),
+    osdkRegistryUrl: parsedOsdkRegistryUrl,
   };
 }

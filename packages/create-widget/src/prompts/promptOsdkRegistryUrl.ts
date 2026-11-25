@@ -16,18 +16,16 @@
 
 import { consola } from "../consola.js";
 import { italic } from "../highlight.js";
+import { parseOsdkRegistryUrl } from "../validate.js";
 
 export async function promptOsdkRegistryUrl({
   osdkRegistryUrl,
 }: {
   osdkRegistryUrl?: string;
 }): Promise<string> {
-  while (
-    osdkRegistryUrl == null ||
-    !/^https:\/\/[^/]+\/artifacts\/api\/repositories\/ri\.[^/]+\/contents\/release\/npm\/?$/u.test(
-      osdkRegistryUrl,
-    )
-  ) {
+  let parsed =
+    osdkRegistryUrl == null ? undefined : parseOsdkRegistryUrl(osdkRegistryUrl);
+  while (parsed == null) {
     if (osdkRegistryUrl != null) {
       consola.fail(
         "Please enter a valid NPM registry URL to install your OSDK package",
@@ -39,6 +37,7 @@ export async function promptOsdkRegistryUrl({
       )}`,
       { type: "text" },
     );
+    parsed = parseOsdkRegistryUrl(osdkRegistryUrl);
   }
-  return osdkRegistryUrl.replace(/\/$/u, "");
+  return parsed;
 }

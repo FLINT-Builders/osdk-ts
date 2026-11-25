@@ -16,13 +16,14 @@
 
 import { consola } from "../consola.js";
 import { italic } from "../highlight.js";
+import { CLIENT_ID_REGEX } from "../validate.js";
 
 export async function promptClientId({
   clientId,
 }: {
   clientId?: string;
 }): Promise<string> {
-  while (clientId == null || !/^[0-9a-f]+$/u.test(clientId)) {
+  while (clientId == null || !CLIENT_ID_REGEX.test(clientId)) {
     if (clientId != null) {
       consola.fail("Please enter a valid OAuth client ID");
     }

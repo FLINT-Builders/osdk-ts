@@ -14,7 +14,55 @@
  * limitations under the License.
  */
 
+import {
+  CLIENT_ID_REGEX,
+  ONTOLOGY_RID_REGEX,
+  parseApplicationUrl,
+  parseFoundryUrl,
+} from "../validate.js";
+
 const LOCALHOST_URL = "http://localhost:8080";
+
+// dotenv ends a value at a line break and treats quotes, `#`, and (with
+// dotenv-expand in Vite/Expo) `$` specially, so none of these may be written.
+const UNSAFE_ENV_VALUE_REGEX = /[\s\p{Cc}#"'`$\\]/u;
+
+function envValue(name: string, value: string): string {
+  if (UNSAFE_ENV_VALUE_REGEX.test(value)) {
+    throw new Error(`Invalid ${name} for env file: ${JSON.stringify(value)}`);
+  }
+  return value;
+}
+
+function clientIdEnvValue(clientId: string): string {
+  if (!CLIENT_ID_REGEX.test(clientId)) {
+    throw new Error(`Invalid OAuth client ID: ${JSON.stringify(clientId)}`);
+  }
+  return envValue("client ID", clientId);
+}
+
+function foundryUrlEnvValue(foundryUrl: string): string {
+  const parsed = parseFoundryUrl(foundryUrl);
+  if (parsed == null) {
+    throw new Error(`Invalid Foundry URL: ${JSON.stringify(foundryUrl)}`);
+  }
+  return envValue("Foundry URL", parsed);
+}
+
+function applicationUrlEnvValue(
+  applicationUrl: string | undefined,
+): string | undefined {
+  if (applicationUrl == null) {
+    return undefined;
+  }
+  const parsed = parseApplicationUrl(applicationUrl);
+  if (parsed == null) {
+    throw new Error(
+      `Invalid application URL: ${JSON.stringify(applicationUrl)}`,
+    );
+  }
+  return envValue("application URL", parsed);
+}
 
 interface AuthDevelopmentArgs {
   envPrefix: string;
@@ -47,6 +95,9 @@ function ontologySection(
   envPrefix: string,
   ontology: string | undefined,
 ): string {
+  if (ontology != null && !ONTOLOGY_RID_REGEX.test(ontology)) {
+    throw new Error(`Invalid Ontology RID: ${JSON.stringify(ontology)}`);
+  }
   return ontology == null
     ? ""
     : `
@@ -66,8 +117,11 @@ export function generateEnvDevelopment({
   corsProxy,
   ontology,
 }: AuthDevelopmentArgs): string {
-  const foundryApiUrl = corsProxy ? LOCALHOST_URL : foundryUrl;
+  const validatedFoundryUrl = foundryUrlEnvValue(foundryUrl);
+  const foundryApiUrl = corsProxy ? LOCALHOST_URL : validatedFoundryUrl;
   const applicationUrl = LOCALHOST_URL;
+  const validatedClientId = clientIdEnvValue(clientId);
+  const ontologyText = ontologySection(envPrefix, ontology);
 
   return `# This env file is intended for developing on your local computer.
 # To set up development in Foundry's Code Workspaces, see .env.code-workspaces.
@@ -95,14 +149,15 @@ ${envPrefix}FOUNDRY_API_URL=${foundryApiUrl}
 # This client ID must match the client ID given on the "OAuth & scopes" page of
 # Developer Console. It typically does not need to be changed.
 
-${envPrefix}FOUNDRY_CLIENT_ID=${clientId}
-${ontologySection(envPrefix, ontology)}`;
+${envPrefix}FOUNDRY_CLIENT_ID=${validatedClientId}
+${ontologyText}`;
 }
 
 export function generateAuthlessEnvDevelopment({
   envPrefix,
   ontology,
 }: AuthlessDevelopmentArgs): string {
+  const ontologyText = ontologySection(envPrefix, ontology);
   return `# This env file is intended for developing on your local computer.
 # To deploy your application to production, see .env.production.
 
@@ -111,7 +166,7 @@ export function generateAuthlessEnvDevelopment({
 # The Vite dev server proxies requests through /api-proxy to avoid CORS issues.
 
 ${envPrefix}FOUNDRY_API_URL=${LOCALHOST_URL}/api-proxy
-${ontologySection(envPrefix, ontology)}`;
+${ontologyText}`;
 }
 
 export function generateEnvProduction({
@@ -121,8 +176,12 @@ export function generateEnvProduction({
   clientId,
   ontology,
 }: AuthProductionArgs): string {
+  const validatedFoundryUrl = foundryUrlEnvValue(foundryUrl);
+  const validatedApplicationUrl = applicationUrlEnvValue(applicationUrl);
+  const validatedClientId = clientIdEnvValue(clientId);
+  const ontologyText = ontologySection(envPrefix, ontology);
   const applicationUrlOrDefault =
-    applicationUrl ??
+    validatedApplicationUrl ??
     "<Fill in the domain at which you deploy your application>";
 
   return `# This env file is intended for deploying your application to production.
@@ -140,21 +199,21 @@ export function generateEnvProduction({
 # URL here and in Developer Console.
 
 ${
-  applicationUrl == null ? "# " : ""
+  validatedApplicationUrl == null ? "# " : ""
 }${envPrefix}FOUNDRY_REDIRECT_URL=${applicationUrlOrDefault}/auth/callback
 
 
 # This URL is the Foundry host that your OSDK will use. It typically does not
 # need to be changed.
 
-${envPrefix}FOUNDRY_API_URL=${foundryUrl}
+${envPrefix}FOUNDRY_API_URL=${validatedFoundryUrl}
 
 
 # This client ID must match the client ID given on the "OAuth & scopes" page of
 # Developer Console. It typically does not need to be changed.
 
-${envPrefix}FOUNDRY_CLIENT_ID=${clientId}
-${ontologySection(envPrefix, ontology)}`;
+${envPrefix}FOUNDRY_CLIENT_ID=${validatedClientId}
+${ontologyText}`;
 }
 
 export function generateAuthlessEnvProduction({
@@ -162,8 +221,10 @@ export function generateAuthlessEnvProduction({
   applicationUrl,
   ontology,
 }: AuthlessProductionArgs): string {
+  const validatedApplicationUrl = applicationUrlEnvValue(applicationUrl);
+  const ontologyText = ontologySection(envPrefix, ontology);
   const applicationUrlOrDefault =
-    applicationUrl ?? "<Fill in your application's subdomain URL>";
+    validatedApplicationUrl ?? "<Fill in your application's subdomain URL>";
 
   return `# This env file is intended for deploying your application to production.
 # To set up development on your local computer, see .env.development.
@@ -171,7 +232,7 @@ export function generateAuthlessEnvProduction({
 
 # This URL is the Foundry proxy URL for your application.
 ${
-  applicationUrl == null ? "# " : ""
+  validatedApplicationUrl == null ? "# " : ""
 }${envPrefix}FOUNDRY_API_URL=${applicationUrlOrDefault}/proxy
-${ontologySection(envPrefix, ontology)}`;
+${ontologyText}`;
 }
