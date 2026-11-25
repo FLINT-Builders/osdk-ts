@@ -52,7 +52,7 @@ export function createConfidentialOauthClient(
   const oauthHttpOptions: HttpRequestOptions = { [customFetch]: fetchFn };
   const joinedScopes = scopes.join(" ");
 
-  const { getToken, makeTokenAndSaveRefresh } = common(
+  const { getToken, makeTokenAndSaveRefresh, startTokenRequest } = common(
     client,
     authServer,
     _signIn,
@@ -64,21 +64,21 @@ export function createConfidentialOauthClient(
   );
 
   async function _signIn() {
-    return makeTokenAndSaveRefresh(
-      throwIfError(
-        await processClientCredentialsResponse(
+    const assertSessionUnchanged = startTokenRequest();
+    const response = throwIfError(
+      await processClientCredentialsResponse(
+        authServer,
+        client,
+        await clientCredentialsGrantRequest(
           authServer,
           client,
-          await clientCredentialsGrantRequest(
-            authServer,
-            client,
-            new URLSearchParams({ scope: joinedScopes }),
-            oauthHttpOptions,
-          ),
+          new URLSearchParams({ scope: joinedScopes }),
+          oauthHttpOptions,
         ),
       ),
-      "signIn",
     );
+    assertSessionUnchanged();
+    return makeTokenAndSaveRefresh(response, "signIn");
   }
 
   return getToken;
