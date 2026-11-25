@@ -135,4 +135,35 @@ describe("getSubmitDisabledReason", () => {
       }),
     ).toBe("Invalid marking selection.");
   });
+
+  it("explains that restrictions are still being checked", () => {
+    expect(
+      getSubmitDisabledReason({
+        ...validBase,
+        isValid: false,
+        restrictionsStatus: "loading",
+      }),
+    ).toBe("Checking marking restrictions...");
+  });
+
+  it("explains that restrictions could not be verified", () => {
+    expect(
+      getSubmitDisabledReason({
+        ...validBase,
+        isValid: false,
+        restrictionsStatus: "error",
+      }),
+    ).toBe("Unable to verify marking restrictions. Please try again.");
+  });
+
+  it("asks for a marking when nothing is selected", () => {
+    expect(
+      getSubmitDisabledReason({
+        ...validBase,
+        isValid: false,
+        selectedIds: [],
+        restrictionsStatus: "unavailable",
+      }),
+    ).toBe("Select at least one marking.");
+  });
 });

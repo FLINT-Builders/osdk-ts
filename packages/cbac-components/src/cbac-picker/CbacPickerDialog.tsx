@@ -44,6 +44,8 @@ export function CbacPickerDialog({
     banner,
     requiredMarkingGroups,
     isValid,
+    approvedMarkingIds,
+    restrictionsStatus,
     userSatisfiesMarkings,
     disallowedMarkingIds,
     isLoading,
@@ -53,10 +55,14 @@ export function CbacPickerDialog({
     reset,
   } = useCbacSelection(initialMarkingIds);
 
-  // Parent controls dialog close on confirm (e.g. to show a loading state)
+  // Parent controls dialog close on confirm (e.g. to show a loading state).
+  // Only the ids a successful restrictions response approved are confirmed.
   const handleConfirm = React.useCallback(() => {
-    onConfirm(selectedIds);
-  }, [onConfirm, selectedIds]);
+    if (approvedMarkingIds == null) {
+      return;
+    }
+    onConfirm([...approvedMarkingIds]);
+  }, [onConfirm, approvedMarkingIds]);
 
   const handleCancel = React.useCallback(() => {
     reset();
@@ -74,6 +80,7 @@ export function CbacPickerDialog({
         selectedIds,
         disallowedMarkingIds,
         userSatisfiesMarkings,
+        restrictionsStatus,
       }),
     [
       isValid,
@@ -81,6 +88,7 @@ export function CbacPickerDialog({
       selectedIds,
       disallowedMarkingIds,
       userSatisfiesMarkings,
+      restrictionsStatus,
     ],
   );
 

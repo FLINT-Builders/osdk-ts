@@ -99,6 +99,13 @@ const MARKINGS = [
   { id: "m1", categoryId: "c1", name: "Alpha" },
   { id: "m2", categoryId: "c1", name: "Beta" },
 ];
+const VALID_RESTRICTIONS: RestrictionsShape = {
+  disallowedMarkings: [],
+  impliedMarkings: [],
+  requiredMarkings: [],
+  userSatisfiesMarkings: true,
+  isValid: true,
+};
 
 describe("useCbacPickerState", () => {
   beforeEach(() => {
@@ -106,12 +113,42 @@ describe("useCbacPickerState", () => {
     setHooks();
   });
 
-  it("uses permissive defaults when restrictions have not loaded", () => {
+  it("treats the selection as invalid when restrictions have not loaded", () => {
     const { result } = renderHook(() => useCbacPickerState(["m1"]));
-    expect(result.current.isValid).toBe(true);
-    expect(result.current.userSatisfiesMarkings).toBe(true);
+    expect(result.current.isValid).toBe(false);
+    expect(result.current.userSatisfiesMarkings).toBe(false);
+    expect(result.current.approvedMarkingIds).toBeUndefined();
+    expect(result.current.restrictionsStatus).toBe("unavailable");
     expect(result.current.disallowedMarkingIds).toEqual([]);
     expect(result.current.requiredMarkingGroups).toEqual([]);
+  });
+
+  it("treats the selection as invalid while restrictions are loading", () => {
+    setHooks({ loading: { restrictions: true } });
+    const { result } = renderHook(() => useCbacPickerState(["m1"]));
+    expect(result.current.isValid).toBe(false);
+    expect(result.current.approvedMarkingIds).toBeUndefined();
+    expect(result.current.restrictionsStatus).toBe("loading");
+  });
+
+  it("treats the selection as invalid when restrictions fail", () => {
+    setHooks({
+      restrictions: VALID_RESTRICTIONS,
+      errors: { restrictions: new Error("boom") },
+    });
+    const { result } = renderHook(() => useCbacPickerState(["m1"]));
+    expect(result.current.isValid).toBe(false);
+    expect(result.current.approvedMarkingIds).toBeUndefined();
+    expect(result.current.restrictionsStatus).toBe("error");
+  });
+
+  it("approves exactly the selected ids when restrictions say they are valid", () => {
+    setHooks({ restrictions: VALID_RESTRICTIONS });
+    const { result } = renderHook(() => useCbacPickerState(["m1", "m2"]));
+    expect(result.current.isValid).toBe(true);
+    expect(result.current.userSatisfiesMarkings).toBe(true);
+    expect(result.current.restrictionsStatus).toBe("loaded");
+    expect(result.current.approvedMarkingIds).toEqual(["m1", "m2"]);
   });
 
   it("passes a single hook error straight through", () => {

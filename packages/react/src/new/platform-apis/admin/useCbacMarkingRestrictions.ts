@@ -71,11 +71,12 @@ export function useCbacMarkingRestrictions({
 
   const enabled = stableMarkingIds.length > 0 && externalEnabled;
 
-  const handleQuery = React.useCallback(() => {
-    return CbacMarkingRestrictionsObjects.get(client, {
+  const handleQuery = React.useCallback(async () => {
+    const response = await CbacMarkingRestrictionsObjects.get(client, {
       markingIds: stableMarkingIds,
       preview: true,
     });
+    return { markingIds: stableMarkingIds, response };
   }, [client, stableMarkingIds]);
 
   const query = usePlatformQuery({
@@ -87,19 +88,22 @@ export function useCbacMarkingRestrictions({
   const restrictions = React.useMemo(():
     | CbacMarkingRestrictionsData
     | undefined => {
-    if (query.data == null) {
+    // Restrictions only describe the marking set they were requested for, so
+    // never report a response for a different set as the current one.
+    if (query.data == null || query.data.markingIds !== stableMarkingIds) {
       return undefined;
     }
+    const { response } = query.data;
     return {
-      disallowedMarkings: query.data.disallowedMarkings.map(String),
-      impliedMarkings: query.data.impliedMarkings.map(String),
-      requiredMarkings: query.data.requiredMarkings.map((group) =>
+      disallowedMarkings: response.disallowedMarkings.map(String),
+      impliedMarkings: response.impliedMarkings.map(String),
+      requiredMarkings: response.requiredMarkings.map((group) =>
         group.map(String),
       ),
-      userSatisfiesMarkings: query.data.userSatisfiesMarkings,
-      isValid: query.data.isValid,
+      userSatisfiesMarkings: response.userSatisfiesMarkings,
+      isValid: response.isValid,
     };
-  }, [query.data]);
+  }, [query.data, stableMarkingIds]);
 
   return {
     restrictions,

@@ -114,7 +114,7 @@ function ClassificationDialog() {
 | `onConfirm`         | `(markingIds: string[]) => void` | Yes      | -       | Called with the selected marking IDs on confirm |
 | `initialMarkingIds` | `string[]`                       | No       | `[]`    | Initial set of selected marking IDs             |
 
-The dialog title automatically adjusts: "Add classification" when no initial markings are provided, "Edit classification" when editing existing markings. The confirm button is disabled with a tooltip when the selection is invalid (e.g., missing required markings).
+The dialog title automatically adjusts: "Add classification" when no initial markings are provided, "Edit classification" when editing existing markings. The confirm button is disabled with a tooltip until the marking restrictions service confirms the current selection is valid: while restrictions are loading, when the restrictions request fails, when nothing is selected, or when the selection is invalid (e.g., missing required markings). `onConfirm` receives only marking IDs that a successful restrictions response approved.
 
 ## Base Components
 
@@ -476,7 +476,7 @@ The frontend handles **only UI concerns**: toggling selections (respecting conju
 ### Validation errors: "Selected markings do not include all required markings"
 
 - Some marking combinations require additional markings. The `requiredMarkingGroups` in the picker state show which markings need to be added
-- The confirm button in `CbacPickerDialog` is disabled with a tooltip when the selection is invalid
+- The confirm button in `CbacPickerDialog` is disabled with a tooltip when the selection is invalid, while restrictions are loading, or when the restrictions request fails
 
 ### CSS not applied
 
