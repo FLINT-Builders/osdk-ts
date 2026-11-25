@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import path from "node:path";
+
 import { isValidSemver, YargsCheckError } from "@osdk/cli.common";
 import type {
   AutoVersionConfigType,
@@ -150,7 +152,12 @@ const command: CommandModule<CommonSiteArgs, SiteDeployArgs> = {
             type: args.autoVersion!,
             tagPrefix: args.gitTagPrefix,
           };
-    await command.default({ ...restArgs, selectedVersion });
+    const config = await configLoader("site");
+    const projectRoot =
+      config != null && args.directory === config.foundryConfig.site.directory
+        ? path.dirname(config.configFilePath)
+        : undefined;
+    await command.default({ ...restArgs, selectedVersion, projectRoot });
   },
 };
 

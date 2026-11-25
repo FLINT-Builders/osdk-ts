@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-import * as fs from "node:fs";
-import path from "node:path";
 import { Readable } from "node:stream";
 
 import { ExitProcessError } from "@osdk/cli.common";
@@ -23,44 +21,48 @@ import type { WidgetSetManifest } from "@osdk/widget.api";
 import { MANIFEST_FILE_LOCATION } from "@osdk/widget.api";
 import archiver from "archiver";
 import { consola } from "consola";
-import prettyBytes from "pretty-bytes";
 
 import { createInternalClientContext, widgetRegistry } from "#net";
 
 import type { StemmaRepositoryRid } from "../../../net/StemmaRepositoryRid.js";
 import type { WidgetSetRid } from "../../../net/WidgetSetRid.js";
+import type { DeployDirectory } from "../../../util/deployDirectory.js";
+import {
+  readDeployDirectoryFile,
+  resolveDeployDirectory,
+  writeDeployArchive,
+} from "../../../util/deployDirectory.js";
 import { loadToken } from "../../../util/token.js";
 import type { WidgetSetDeployArgs } from "./WidgetSetDeployArgs.js";
+
+interface WidgetSetDeployInternalArgs extends WidgetSetDeployArgs {
+  /** When set, `directory` came from the config file and must resolve inside this root. */
+  projectRoot: string | undefined;
+}
 
 export default async function widgetSetDeployCommand({
   widgetSet,
   foundryUrl,
   directory,
+  projectRoot,
   repository,
   token,
   tokenFile,
-}: WidgetSetDeployArgs): Promise<void> {
+}: WidgetSetDeployInternalArgs): Promise<void> {
   const loadedToken = await loadToken(token, tokenFile);
   const tokenProvider = () => loadedToken;
   const clientCtx = createInternalClientContext(foundryUrl, tokenProvider);
 
-  consola.debug(
-    `Using directory for widget set files: "${path.resolve(directory)}`,
+  const deployDirectory = await resolveDeployDirectory(directory, projectRoot);
+  consola.info(
+    `Using directory for widget set files: "${deployDirectory.realPath}"`,
   );
-  const stat = await fs.promises.stat(directory);
-  if (!stat.isDirectory()) {
-    throw new ExitProcessError(
-      2,
-      "Specified path exists but is not a directory",
-    );
-  }
 
-  const widgetSetVersion = await findWidgetSetVersion(directory);
+  const widgetSetVersion = await findWidgetSetVersion(deployDirectory);
   consola.info(`Found version from manifest: ${widgetSetVersion}`);
 
   consola.start("Zipping widget set files");
-  const archive = archiver("zip").directory(directory, false);
-  logArchiveStats(archive);
+  const archive = archiver("zip");
 
   let deployRid: WidgetSetRid | StemmaRepositoryRid = widgetSet;
   if (repository != null) {
@@ -76,16 +78,18 @@ export default async function widgetSetDeployCommand({
       widgetSetVersion,
       Readable.toWeb(archive) as ReadableStream<any>, // This cast is because the dom fetch doesn't align type wise with streams
     ),
-    archive.finalize(),
+    writeDeployArchive(archive, deployDirectory),
   ]);
   consola.success("Publish complete");
 }
 
-async function findWidgetSetVersion(directory: string): Promise<string> {
+async function findWidgetSetVersion(
+  directory: DeployDirectory,
+): Promise<string> {
   try {
-    const manifestContent = await fs.promises.readFile(
-      path.resolve(directory, MANIFEST_FILE_LOCATION),
-      "utf8",
+    const manifestContent = await readDeployDirectoryFile(
+      directory,
+      MANIFEST_FILE_LOCATION,
     );
     const manifest: WidgetSetManifest = JSON.parse(manifestContent);
     if (manifest.widgetSet == null || manifest.widgetSet.version == null) {
@@ -100,20 +104,4 @@ async function findWidgetSetVersion(directory: string): Promise<string> {
       }`,
     );
   }
-}
-function logArchiveStats(archive: archiver.Archiver): void {
-  let archiveStats = { fileCount: 0, bytes: 0 };
-  archive.on("progress", (progress) => {
-    archiveStats = {
-      fileCount: progress.entries.total,
-      bytes: progress.fs.totalBytes,
-    };
-  });
-  archive.on("finish", () => {
-    consola.info(
-      `Zipped ${prettyBytes(archiveStats.bytes, {
-        binary: true,
-      })} total over ${archiveStats.fileCount} files`,
-    );
-  });
 }

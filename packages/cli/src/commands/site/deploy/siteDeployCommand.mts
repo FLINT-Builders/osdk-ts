@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-import * as fs from "node:fs";
-import path from "node:path";
 import { Readable } from "node:stream";
 
 import { ExitProcessError } from "@osdk/cli.common";
@@ -24,12 +22,16 @@ import { autoVersion, AutoVersionError } from "@osdk/foundry-config-json";
 import archiver from "archiver";
 import { consola } from "consola";
 import { colorize } from "consola/utils";
-import prettyBytes from "pretty-bytes";
 
 import { createInternalClientContext, thirdPartyApplications } from "#net";
 
 import type { InternalClientContext } from "../../../net/internalClientContext.mjs";
 import type { ThirdPartyAppRid } from "../../../net/ThirdPartyAppRid.js";
+import type { DeployDirectory } from "../../../util/deployDirectory.js";
+import {
+  resolveDeployDirectory,
+  writeDeployArchive,
+} from "../../../util/deployDirectory.js";
 import { maybeUpdateJemmaCustomMetadata } from "../../../util/maybeUpdateJemmaCustomMetadata.js";
 import { loadToken } from "../../../util/token.js";
 import type { SiteDeployArgs } from "./SiteDeployArgs.js";
@@ -39,6 +41,8 @@ interface SiteDeployInternalArgs extends Omit<
   "version" | "autoVersion" | "gitTagPrefix"
 > {
   selectedVersion: string | AutoVersionConfig;
+  /** When set, `directory` came from the config file and must resolve inside this root. */
+  projectRoot: string | undefined;
 }
 
 export default async function siteDeployCommand({
@@ -49,6 +53,7 @@ export default async function siteDeployCommand({
   snapshot,
   snapshotId,
   directory,
+  projectRoot,
   token,
   tokenFile,
 }: SiteDeployInternalArgs): Promise<void> {
@@ -64,18 +69,11 @@ export default async function siteDeployCommand({
     consola.info(`Auto version inferred next version to be: ${siteVersion}`);
   }
 
-  consola.debug(`Using directory for site files: "${path.resolve(directory)}`);
-  const stat = await fs.promises.stat(directory);
-  if (!stat.isDirectory()) {
-    throw new ExitProcessError(
-      2,
-      "Specified path exists but is not a directory",
-    );
-  }
+  const deployDirectory = await resolveDeployDirectory(directory, projectRoot);
+  consola.info(`Using directory for site files: "${deployDirectory.realPath}"`);
 
   consola.start("Zipping site files");
-  const archive = archiver("zip").directory(directory, false);
-  logArchiveStats(archive);
+  const archive = archiver("zip");
 
   if (snapshot) {
     await uploadSnapshot(
@@ -84,12 +82,13 @@ export default async function siteDeployCommand({
       siteVersion,
       snapshotId ?? "",
       archive,
+      deployDirectory,
     );
     consola.info("Snapshot mode enabled, skipping deployment");
     return;
   }
 
-  await upload(clientCtx, application, siteVersion, archive);
+  await upload(clientCtx, application, siteVersion, archive, deployDirectory);
 
   let siteLink: string | undefined;
   if (!uploadOnly) {
@@ -141,6 +140,7 @@ async function uploadSnapshot(
   siteVersion: string,
   snapshotId: string,
   archive: archiver.Archiver,
+  deployDirectory: DeployDirectory,
 ): Promise<void> {
   consola.start("Uploading snapshot site files");
   await Promise.all([
@@ -151,7 +151,7 @@ async function uploadSnapshot(
       snapshotId,
       Readable.toWeb(archive) as ReadableStream<any>, // This cast is because the dom fetch doesn't align type wise with streams
     ),
-    archive.finalize(),
+    writeDeployArchive(archive, deployDirectory),
   ]);
   consola.success("Snapshot upload complete");
 }
@@ -161,6 +161,7 @@ async function upload(
   application: ThirdPartyAppRid,
   siteVersion: string,
   archive: archiver.Archiver,
+  deployDirectory: DeployDirectory,
 ): Promise<void> {
   consola.start("Uploading site files");
   await Promise.all([
@@ -170,26 +171,9 @@ async function upload(
       siteVersion,
       Readable.toWeb(archive) as ReadableStream<any>, // This cast is because the dom fetch doesn't align type wise with streams
     ),
-    archive.finalize(),
+    writeDeployArchive(archive, deployDirectory),
   ]);
   consola.success("Upload complete");
-}
-
-function logArchiveStats(archive: archiver.Archiver): void {
-  let archiveStats = { fileCount: 0, bytes: 0 };
-  archive.on("progress", (progress) => {
-    archiveStats = {
-      fileCount: progress.entries.total,
-      bytes: progress.fs.totalBytes,
-    };
-  });
-  archive.on("finish", () => {
-    consola.info(
-      `Zipped ${prettyBytes(archiveStats.bytes, {
-        binary: true,
-      })} total over ${archiveStats.fileCount} files`,
-    );
-  });
 }
 
 function logSiteLink(title: string, link: string): void {
