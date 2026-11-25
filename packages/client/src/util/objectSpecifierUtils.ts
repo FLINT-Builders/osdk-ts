@@ -20,6 +20,7 @@ import type {
   ObjectTypeDefinition,
   PrimaryKeyType,
 } from "@osdk/api";
+import invariant from "tiny-invariant";
 
 /**
  * Creates an Object Specifier. An ObjectSpecifier is a string that uniquely identifies an object in the system,
@@ -63,7 +64,14 @@ export function createObjectSpecifierFromInterfaceSpecifier<
 export function extractPrimaryKeyFromObjectSpecifier(
   ObjectSpecifier: ObjectSpecifier<any>,
 ): string {
-  return ObjectSpecifier.split(":")[1];
+  // Object type api names cannot contain ":" but primary keys can, so only the
+  // first ":" separates the two parts.
+  const separatorIndex = ObjectSpecifier.indexOf(":");
+  invariant(
+    separatorIndex !== -1,
+    `Invalid object specifier: ${ObjectSpecifier}`,
+  );
+  return ObjectSpecifier.slice(separatorIndex + 1);
 }
 
 /**
@@ -74,5 +82,8 @@ export function extractPrimaryKeyFromObjectSpecifier(
 export function extractObjectTypeFromObjectSpecifier(
   ObjectSpecifier: ObjectSpecifier<any>,
 ): string {
-  return ObjectSpecifier.split(":")[0];
+  const separatorIndex = ObjectSpecifier.indexOf(":");
+  return separatorIndex === -1
+    ? ObjectSpecifier
+    : ObjectSpecifier.slice(0, separatorIndex);
 }
