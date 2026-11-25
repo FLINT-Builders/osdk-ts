@@ -15,6 +15,7 @@
  */
 
 import { createFetch } from "../createFetch.mjs";
+import { encodePathSegment } from "../encodePathSegment.mjs";
 import type { InternalClientContext } from "../internalClientContext.mjs";
 import type { StemmaRepositoryRid } from "../StemmaRepositoryRid.js";
 import type { WidgetSetRid } from "../WidgetSetRid.js";
@@ -27,7 +28,7 @@ export async function publishRelease(
 ): Promise<void> {
   const fetch = createFetch(ctx.tokenProvider);
   const urlObj = new URL(
-    `api/v2/widgets/repositories/${repositoryRid}/publish`,
+    `api/v2/widgets/repositories/${encodePathSegment(repositoryRid)}/publish`,
     ctx.foundryUrl,
   );
   urlObj.searchParams.set("preview", "true");

@@ -15,6 +15,7 @@
  */
 
 import { createFetch } from "../createFetch.mjs";
+import { encodePathSegment } from "../encodePathSegment.mjs";
 import type { InternalClientContext } from "../internalClientContext.mjs";
 import type { ThirdPartyAppRid } from "../ThirdPartyAppRid.js";
 import type { DeployWebsiteRequest } from "./DeployWebsiteRequest.mjs";
@@ -27,7 +28,7 @@ export async function deployWebsite(
 ): Promise<Website> {
   const fetch = createFetch(ctx.tokenProvider);
   const urlObj = new URL(
-    `api/v2/thirdPartyApplications/${thirdPartyAppRid}/website/deploy`,
+    `api/v2/thirdPartyApplications/${encodePathSegment(thirdPartyAppRid)}/website/deploy`,
     ctx.foundryUrl,
   );
   urlObj.searchParams.set("preview", "true");

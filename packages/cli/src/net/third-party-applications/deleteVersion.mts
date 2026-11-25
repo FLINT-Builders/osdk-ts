@@ -15,6 +15,7 @@
  */
 
 import { createFetch } from "../createFetch.mjs";
+import { encodePathSegment } from "../encodePathSegment.mjs";
 import type { InternalClientContext } from "../internalClientContext.mjs";
 import type { ThirdPartyAppRid } from "../ThirdPartyAppRid.js";
 
@@ -25,9 +26,7 @@ export async function deleteVersion(
 ): Promise<void> {
   const fetch = createFetch(ctx.tokenProvider);
   const urlObj = new URL(
-    `api/v2/thirdPartyApplications/${thirdPartyAppRid}/website/versions/${encodeURIComponent(
-      version,
-    )}`,
+    `api/v2/thirdPartyApplications/${encodePathSegment(thirdPartyAppRid)}/website/versions/${encodePathSegment(version)}`,
     ctx.foundryUrl,
   );
   urlObj.searchParams.set("preview", "true");

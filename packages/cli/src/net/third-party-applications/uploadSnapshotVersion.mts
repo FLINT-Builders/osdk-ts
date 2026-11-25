@@ -15,6 +15,7 @@
  */
 
 import { createFetch } from "../createFetch.mjs";
+import { encodePathSegment } from "../encodePathSegment.mjs";
 import type { InternalClientContext } from "../internalClientContext.mjs";
 import type { ThirdPartyAppRid } from "../ThirdPartyAppRid.js";
 import type { Version } from "./Version.mjs";
@@ -28,7 +29,7 @@ export async function uploadSnapshotVersion(
 ): Promise<Version> {
   const fetch = createFetch(ctx.tokenProvider);
   const urlObj = new URL(
-    `api/v2/thirdPartyApplications/${thirdPartyAppRid}/website/versions/uploadSnapshot`,
+    `api/v2/thirdPartyApplications/${encodePathSegment(thirdPartyAppRid)}/website/versions/uploadSnapshot`,
     ctx.foundryUrl,
   );
   urlObj.searchParams.set("version", version);
