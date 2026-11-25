@@ -79,7 +79,7 @@ export async function generatePerActionDataFiles(
         export type ParamsDefinition = {
           ${
           entries.map(([key, value]) => {
-            return `"${key}": {
+            return `${JSON.stringify(key)}: {
                 ${
               stringify(value, {
                 description: (value, d) => value ? d(value) : undefined, // trick to remove undefineds
@@ -185,16 +185,20 @@ export async function generatePerActionDataFiles(
           stringify(fullActionDef.parameters, {
             "*": (ogValue, _, ogKey) => {
               const key = `${getDescriptionIfPresent(ogValue.description)}
-                  readonly "${ogKey}"${ogValue.nullable ? "?" : ""}`;
+                  readonly ${JSON.stringify(ogKey)}${
+                ogValue.nullable ? "?" : ""
+              }`;
 
               const value = (ogValue.multiplicity
                 ? `ReadonlyArray<${getActionParamType(ogValue.type)}>`
                 : `${getActionParamType(ogValue.type)}`)
                 + (ogValue.nullable ? " | null" : "");
               jsDocBlock.push(
-                `* @param {${getActionParamType(ogValue.type)}} ${
-                  ogValue.nullable ? `[${ogKey}]` : ogKey
-                } ${escapeJsDocText(ogValue.description ?? "")}`,
+                escapeJsDocText(
+                  `* @param {${getActionParamType(ogValue.type)}} ${
+                    ogValue.nullable ? `[${ogKey}]` : ogKey
+                  } ${ogValue.description ?? ""}`,
+                ),
               );
               return [key, value];
             },
@@ -352,9 +356,9 @@ export async function generatePerActionDataFiles(
     await formatTs(`
       ${
       Object.values(enhancedOntology.actionTypes).map(action => {
-        const exportConstLine = `export {${action.shortApiName} } from "${
-          action.getImportPathRelTo(indexFileRelPath)
-        }";`;
+        const exportConstLine = `export {${action.shortApiName} } from ${
+          JSON.stringify(action.getImportPathRelTo(indexFileRelPath))
+        };`;
 
         return exportConstLine;
       })

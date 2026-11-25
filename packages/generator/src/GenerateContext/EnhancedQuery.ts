@@ -15,12 +15,14 @@
  */
 
 import type { QueryDataType, QueryTypeV2 } from "@osdk/foundry.ontologies";
+import { assertIdentifier } from "../util/validateGeneratedIdentifiers.js";
 import type { EnhanceCommon } from "./EnhanceCommon.js";
 import { EnhancedBase } from "./EnhancedBase.js";
 
 export class EnhancedQuery extends EnhancedBase<QueryTypeV2> {
   constructor(common: EnhanceCommon, public raw: QueryTypeV2) {
     super(common, raw, raw.apiName, "./ontology/queries");
+    assertIdentifier(this.shortApiName, "queryTypes");
   }
 
   get description(): string | undefined {

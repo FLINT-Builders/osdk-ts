@@ -36,6 +36,7 @@ import { deleteUndefineds } from "../util/deleteUndefineds.js";
 import { escapeJsDocText } from "../util/escapeJsDocText.js";
 import { stringify } from "../util/stringify.js";
 import { formatTs } from "../util/test/formatTs.js";
+import { assertIdentifier } from "../util/validateGeneratedIdentifiers.js";
 import { getDescriptionIfPresent } from "./getDescriptionIfPresent.js";
 
 export async function generatePerQueryDataFilesV2(
@@ -81,9 +82,9 @@ export async function generatePerQueryDataFilesV2(
     await formatTs(`
     ${
       Object.values(ontology.queryTypes).map(query =>
-        `export {${query.shortApiName}} from "${
-          query.getImportPathRelTo(relOutDir)
-        }";`
+        `export {${query.shortApiName}} from ${
+          JSON.stringify(query.getImportPathRelTo(relOutDir))
+        };`
       )
         .join("\n")
     }
@@ -169,7 +170,7 @@ async function generateV2QueryFile(
                 `
                 ${
                   queryParamJsDoc(paramToDef(parameter), { apiName })
-                }readonly "${apiName}"${q.nullable ? "?" : ""}`,
+                }readonly ${JSON.stringify(apiName)}${q.nullable ? "?" : ""}`,
                 getQueryParamType(ontology, q, "Param", false, typeRefNames),
               ];
             },
@@ -247,7 +248,9 @@ function parameterDefsForType(
 ) {
   return stringify(query.parameters, {
     "*": (parameter, valueFormatter, apiName) => [
-      `${queryParamJsDoc(paramToDef(parameter), { apiName })} "${apiName}"`,
+      `${queryParamJsDoc(paramToDef(parameter), { apiName })} ${
+        JSON.stringify(apiName)
+      }`,
       ` {
           ${stringify(deleteUndefineds(paramToDef(parameter)))},
           ${getLineFor__OsdkTargetType(ontology, parameter.dataType)}
@@ -295,7 +298,7 @@ export function getQueryParamType(
   isMapKey = false,
   typeRefNames?: Map<string, string>,
 ): string {
-  let paramType = `unknown /* ${input.type} */`;
+  let paramType = `unknown /* ${escapeJsDocText(input.type)} */`;
   const recurse = (i: QueryDataTypeDefinition, mk = false) =>
     getQueryParamType(enhancedOntology, i, type, mk, typeRefNames);
 
@@ -333,9 +336,9 @@ export function getQueryParamType(
           "*": (p, formatter, apiName) => {
             return [
               `
-                ${type === "Param" ? "readonly " : ""}"${apiName}"${
-                p.nullable ? "?" : ""
-              }`,
+                ${type === "Param" ? "readonly " : ""}${
+                JSON.stringify(apiName)
+              }${p.nullable ? "?" : ""}`,
               recurse(p),
             ];
           },
@@ -346,22 +349,32 @@ export function getQueryParamType(
     case "twoDimensionalAggregation":
       paramType = `Query${type}.TwoDimensionalAggregationType<${
         input.twoDimensionalAggregation.keyType === "range"
-          ? `Query${type}.RangeKey<"${input.twoDimensionalAggregation.keySubtype}">`
-          : `"${input.twoDimensionalAggregation.keyType}"`
-      }, "${input.twoDimensionalAggregation.valueType}">`;
+          ? `Query${type}.RangeKey<${
+            JSON.stringify(input.twoDimensionalAggregation.keySubtype)
+          }>`
+          : JSON.stringify(input.twoDimensionalAggregation.keyType)
+      }, ${JSON.stringify(input.twoDimensionalAggregation.valueType)}>`;
       break;
 
     case "threeDimensionalAggregation":
       paramType = `Query${type}.ThreeDimensionalAggregationType<${
         input.threeDimensionalAggregation.keyType === "range"
-          ? `Query${type}.RangeKey<"${input.threeDimensionalAggregation.keySubtype}">`
-          : `"${input.threeDimensionalAggregation.keyType}"`
+          ? `Query${type}.RangeKey<${
+            JSON.stringify(input.threeDimensionalAggregation.keySubtype)
+          }>`
+          : JSON.stringify(input.threeDimensionalAggregation.keyType)
       },${
         input.threeDimensionalAggregation.valueType.keyType === "range"
-          ? `Query${type}.RangeKey<"${input.threeDimensionalAggregation.valueType.keySubtype}">`
-          : `"${input.threeDimensionalAggregation.valueType.keyType}"`
+          ? `Query${type}.RangeKey<${
+            JSON.stringify(
+              input.threeDimensionalAggregation.valueType.keySubtype,
+            )
+          }>`
+          : JSON.stringify(input.threeDimensionalAggregation.valueType.keyType)
       },
-        "${input.threeDimensionalAggregation.valueType.valueType}">`;
+        ${
+        JSON.stringify(input.threeDimensionalAggregation.valueType.valueType)
+      }>`;
       break;
     case "object":
       if (isMapKey) {
@@ -435,6 +448,7 @@ function buildTypeRefNames(
     // We prefix with $ to ensure the name is a valid TypeScript identifier, and replace any dashes with underscores for the same reason
     // An example ID looks like so "1225e6a4-41d2-4081-9b3c-9b7dd0db5390"
     const sanitized = `$${id.replace(/-/g, "_")}`;
+    assertIdentifier(sanitized, "typeReferences");
     const qualName = `CustomTypes.${sanitized}`;
     names.set(id, expand ? `CustomTypes.Expand<${qualName}>` : qualName);
   }

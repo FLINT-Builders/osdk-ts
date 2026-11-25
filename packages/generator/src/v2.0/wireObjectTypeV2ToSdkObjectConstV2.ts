@@ -139,12 +139,12 @@ export function wireObjectTypeV2ToSdkObjectConstV2(
     export const ${object.shortApiName}
     = {
       type: "${object instanceof EnhancedObjectType ? "object" : "interface"}",
-      apiName: "${object.fullApiName}",
+      apiName: ${JSON.stringify(object.fullApiName)},
       osdkMetadata: $osdkMetadata,
-      primaryKeyApiName: "${definition.primaryKeyApiName}",
-      primaryKeyType: "${definition.primaryKeyType}",
+      primaryKeyApiName: ${JSON.stringify(definition.primaryKeyApiName)},
+      primaryKeyType: ${JSON.stringify(definition.primaryKeyType)},
       internalDoNotUseMetadata: {
-        rid: "${definition.rid}",
+        rid: ${JSON.stringify(definition.rid)},
       },
     } satisfies ${objectDefIdentifier} & { internalDoNotUseMetadata: { rid: string } } as ${objectDefIdentifier};`;
 }
@@ -255,7 +255,7 @@ ${
             propertyJsdoc(propertyDefinition, metadata, {
               apiName,
             })
-          }readonly "${maybeStripNamespace(type, apiName)}"`,
+          }readonly ${JSON.stringify(maybeStripNamespace(type, apiName))}`,
           (typeof propertyDefinition.type === "object"
             ? remapStructType(propertyDefinition.type)
             : getPropTypeOrValueTypeEnum(
@@ -303,11 +303,11 @@ export function createDefinition(
   } {
       osdkMetadata: typeof $osdkMetadata;
       type: "${object instanceof EnhancedObjectType ? "object" : "interface"}";
-      apiName: "${object.fullApiName}";${
+      apiName: ${JSON.stringify(object.fullApiName)};${
     object instanceof EnhancedObjectType && definition.type === "object"
       ? `
-      primaryKeyApiName: "${definition.primaryKeyApiName}";
-      primaryKeyType: "${definition.primaryKeyType}";`
+      primaryKeyApiName: ${JSON.stringify(definition.primaryKeyApiName)};
+      primaryKeyType: ${JSON.stringify(definition.primaryKeyType)};`
       : ""
   }
       __DefinitionMetadata?: {
@@ -370,7 +370,7 @@ export function createDefinition(
                     apiName,
                   },
                 )
-              }"${maybeStripNamespace(object, apiName)}"`,
+              }${JSON.stringify(maybeStripNamespace(object, apiName))}`,
               `$PropertyDef<${JSON.stringify(propertyDefinition.type)}, "${
                 propertyDefinition.nullable ? "nullable" : "non-nullable"
               }", "${
@@ -410,7 +410,7 @@ ${
               .getImportedDefinitionIdentifier(true);
 
             return [
-              `readonly ${key}`,
+              `readonly ${JSON.stringify(key)}`,
               `${
                 definition.multiplicity
                   ? `${linkTarget}.ObjectSet`

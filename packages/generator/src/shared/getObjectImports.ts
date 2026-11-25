@@ -33,8 +33,8 @@ export function getObjectImports(
         ? defId
         : `${defId} as ${importedId}`;
 
-      return `import type { ${nameOrAlias} } from "${
-        obj.getImportPathRelTo("./" + currentFilePath)
-      }";`;
+      return `import type { ${nameOrAlias} } from ${
+        JSON.stringify(obj.getImportPathRelTo("./" + currentFilePath))
+      };`;
     }).join("\n");
 }

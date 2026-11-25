@@ -17,12 +17,14 @@
 import type { InterfaceMetadata } from "@osdk/api";
 import type { InterfaceType } from "@osdk/foundry.ontologies";
 import { wireInterfaceTypeV2ToSdkObjectDefinition } from "@osdk/generator-converters";
+import { assertIdentifier } from "../util/validateGeneratedIdentifiers.js";
 import type { EnhanceCommon } from "./EnhanceCommon.js";
 import { EnhancedBase } from "./EnhancedBase.js";
 
 export class EnhancedInterfaceType extends EnhancedBase<InterfaceType> {
   constructor(common: EnhanceCommon, public raw: InterfaceType) {
     super(common, raw, raw.apiName, "./ontology/interfaces");
+    assertIdentifier(this.shortApiName, "interfaceTypes");
   }
 
   getDefinitionIdentifier(v2: boolean): string {
