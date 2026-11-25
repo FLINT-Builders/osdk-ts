@@ -31,9 +31,11 @@ import type * as Ontologies from "@osdk/foundry.ontologies";
 
 import { consola } from "consola";
 import * as fs from "fs";
+import type { SpawnSyncReturns } from "node:child_process";
 import { spawnSync } from "node:child_process";
 import { accessSync, constants } from "node:fs";
 import { createRequire } from "node:module";
+import * as os from "node:os";
 import * as path from "node:path";
 import { pathToFileURL } from "node:url";
 import invariant from "tiny-invariant";
@@ -116,24 +118,36 @@ function discoverPythonFunctions(
     );
   }
 
-  const result = spawnSync(
-    pythonPath,
-    [
-      "-m",
-      "functions.bin",
-      "parse",
-      "--src-dir",
-      srcDir,
-      "--root-project-dir",
-      rootProjectDir,
-      "--handle-errors",
-    ],
-    {
-      cwd: rootProjectDir,
-      encoding: "utf-8",
-      maxBuffer: 50 * 1024 * 1024, // 50MB buffer - function discovery can produce large JSON output
-    },
+  // The project being scanned is untrusted input to the parser: run in
+  // isolated mode (-I) from an empty directory so neither the project nor the
+  // working directory is on sys.path when `functions.bin` is resolved.
+  const isolatedCwd = fs.mkdtempSync(
+    path.join(os.tmpdir(), "osdk-python-discovery-"),
   );
+  let result: SpawnSyncReturns<string>;
+  try {
+    result = spawnSync(
+      pythonPath,
+      [
+        "-I",
+        "-m",
+        "functions.bin",
+        "parse",
+        "--src-dir",
+        path.resolve(srcDir),
+        "--root-project-dir",
+        path.resolve(rootProjectDir),
+        "--handle-errors",
+      ],
+      {
+        cwd: isolatedCwd,
+        encoding: "utf-8",
+        maxBuffer: 50 * 1024 * 1024, // 50MB buffer - function discovery can produce large JSON output
+      },
+    );
+  } finally {
+    fs.rmSync(isolatedCwd, { recursive: true, force: true });
+  }
 
   if (result.error) {
     consola.warn(

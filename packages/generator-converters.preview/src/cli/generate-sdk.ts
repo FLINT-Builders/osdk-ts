@@ -68,11 +68,16 @@ function generatePythonSdk(
 
   const ontologyApiName = previewMetadata.ontology?.apiName ?? "ontology";
 
+  // The current directory may be an untrusted project, so Python runs in
+  // isolated mode (-I) from a private temp directory: neither location is on
+  // sys.path when modules are resolved.
+  const tmpDir = fsSync.mkdtempSync(path.join(os.tmpdir(), "python-sdk-"));
+
   // Discover site-packages from the conda environment
   const siteResult = spawnSync(
     pythonBinary,
-    ["-c", "import site; print(site.getsitepackages()[0])"],
-    { encoding: "utf-8" },
+    ["-I", "-c", "import site; print(site.getsitepackages()[0])"],
+    { cwd: tmpDir, encoding: "utf-8" },
   );
   if (siteResult.status !== 0 || !siteResult.stdout?.trim()) {
     consola.warn(
@@ -80,13 +85,13 @@ function generatePythonSdk(
         siteResult.stderr || siteResult.error
       }`,
     );
+    fsSync.rmSync(tmpDir, { recursive: true, force: true });
     return;
   }
   const sitePackages = siteResult.stdout.trim();
   consola.info(`Python site-packages: ${sitePackages}`);
 
   // Write metadata to a temp file for the generator
-  const tmpDir = fsSync.mkdtempSync(path.join(os.tmpdir(), "python-sdk-"));
   const tmpMetadata = path.join(tmpDir, "metadata.json");
   fsSync.writeFileSync(
     tmpMetadata,
@@ -102,6 +107,7 @@ function generatePythonSdk(
   const genResult = spawnSync(
     pythonBinary,
     [
+      "-I",
       "-m",
       "foundry_sdk_generator",
       "generate_package",
@@ -119,7 +125,7 @@ function generatePythonSdk(
       tmpMetadata,
       "--force",
     ],
-    { encoding: "utf-8", stdio: "pipe" },
+    { cwd: tmpDir, encoding: "utf-8", stdio: "pipe" },
   );
 
   if (genResult.status !== 0) {
