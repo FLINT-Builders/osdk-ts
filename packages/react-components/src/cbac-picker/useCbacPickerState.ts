@@ -27,6 +27,7 @@ import type {
   CbacBannerData,
   MarkingSelectionState,
   RequiredMarkingGroup,
+  RestrictionsStatus,
 } from "./types.js";
 import { EMPTY_ARRAY, resolveRequiredGroups } from "./utils/cbacPickerUtils.js";
 import {
@@ -42,6 +43,12 @@ export interface UseCbacPickerStateResult {
   banner: CbacBannerData | undefined;
   requiredMarkingGroups: RequiredMarkingGroup[];
   isValid: boolean;
+  /**
+   * The marking ids a successful restrictions response approved, or
+   * `undefined` when the current selection has not been approved.
+   */
+  approvedMarkingIds: readonly string[] | undefined;
+  restrictionsStatus: RestrictionsStatus;
   userSatisfiesMarkings: boolean;
   disallowedMarkingIds: readonly string[];
   isLoading: boolean;
@@ -98,8 +105,23 @@ export function useCbacPickerState(
   const impliedMarkingIds = restrictions?.impliedMarkings ?? EMPTY_ARRAY;
   const disallowedMarkingIds = restrictions?.disallowedMarkings ?? EMPTY_ARRAY;
   const requiredMarkingGroups = restrictions?.requiredMarkings ?? EMPTY_GROUPS;
-  const isValid = restrictions?.isValid ?? true;
-  const userSatisfiesMarkings = restrictions?.userSatisfiesMarkings ?? true;
+
+  // Fail closed: a selection is only valid once a successful restrictions
+  // response for exactly these marking ids says so.
+  const restrictionsStatus: RestrictionsStatus =
+    restrictionsError != null
+      ? "error"
+      : restrictionsLoading
+        ? "loading"
+        : restrictions == null
+          ? "unavailable"
+          : "loaded";
+  const isValid =
+    restrictionsStatus === "loaded" && restrictions?.isValid === true;
+  const userSatisfiesMarkings =
+    restrictionsStatus === "loaded" &&
+    restrictions?.userSatisfiesMarkings === true;
+  const approvedMarkingIds = isValid ? stableSelectedIds : undefined;
 
   const isLoading =
     categoriesLoading ||
@@ -159,6 +181,8 @@ export function useCbacPickerState(
       banner,
       requiredMarkingGroups: resolvedRequiredGroups,
       isValid,
+      approvedMarkingIds,
+      restrictionsStatus,
       userSatisfiesMarkings,
       disallowedMarkingIds,
       isLoading,
@@ -171,6 +195,8 @@ export function useCbacPickerState(
       banner,
       resolvedRequiredGroups,
       isValid,
+      approvedMarkingIds,
+      restrictionsStatus,
       userSatisfiesMarkings,
       disallowedMarkingIds,
       isLoading,

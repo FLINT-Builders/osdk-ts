@@ -52,6 +52,8 @@ export interface RequiredMarkingGroup {
   markingNames: string[];
 }
 
+export type RestrictionsStatus = "unavailable" | "loading" | "error" | "loaded";
+
 export interface MaxClassificationConstraint {
   bannerClassificationString: string;
   helperText?: string;

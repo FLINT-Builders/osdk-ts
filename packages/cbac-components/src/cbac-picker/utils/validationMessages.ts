@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import type { RequiredMarkingGroup } from "../types.js";
+import type { RequiredMarkingGroup, RestrictionsStatus } from "../types.js";
 
 export interface ValidationContext {
   isValid: boolean;
@@ -22,6 +22,7 @@ export interface ValidationContext {
   selectedIds: string[];
   disallowedMarkingIds: readonly string[];
   userSatisfiesMarkings: boolean;
+  restrictionsStatus?: RestrictionsStatus;
 }
 
 export function getSubmitDisabledReason(
@@ -29,6 +30,17 @@ export function getSubmitDisabledReason(
 ): string | undefined {
   if (ctx.isValid) {
     return undefined;
+  }
+  if (ctx.restrictionsStatus === "loading") {
+    return "Checking marking restrictions...";
+  }
+  if (ctx.restrictionsStatus === "error") {
+    return "Unable to verify marking restrictions. Please try again.";
+  }
+  if (ctx.restrictionsStatus === "unavailable") {
+    return ctx.selectedIds.length === 0
+      ? "Select at least one marking."
+      : "Marking restrictions have not been verified.";
   }
   if (ctx.requiredMarkingGroups.length > 0) {
     return "Selected markings do not include all required markings.";
