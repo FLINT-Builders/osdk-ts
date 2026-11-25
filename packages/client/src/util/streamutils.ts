@@ -17,6 +17,8 @@
 const START_TOKEN = new Uint8Array([123, 34, 100, 97, 116, 97, 34, 58, 91]); // `{"data":[`
 const OBJECT_OPEN_CHAR_CODE = 123; // '{'
 const OBJECT_CLOSE_CHAR_CODE = 125; // '}'
+const QUOTE_CHAR_CODE = 34; // '"'
+const BACKSLASH_CHAR_CODE = 92; // '\'
 
 export async function* parseStreamedResponse(
   asyncIterable: AsyncIterable<Uint8Array>,
@@ -26,6 +28,11 @@ export async function* parseStreamedResponse(
   let parsedStart = false;
   let prevChunks: Uint8Array[] = [];
   let openBracesCount = 0;
+  // String and escape state must persist across chunks: braces inside JSON
+  // strings are data, not structure. Multi-byte UTF-8 sequences never contain
+  // ASCII bytes, so scanning bytes is safe.
+  let inString = false;
+  let escaped = false;
 
   for await (const chunk of asyncIterable) {
     // on the first chunk, skip the expected START_TOKEN if we see it
@@ -37,50 +44,53 @@ export async function* parseStreamedResponse(
       }
     }
 
+    // index in this chunk where the current top level object begins; an object
+    // carried over from a previous chunk continues from the start of this one
+    let objectStart = openBracesCount > 0 ? 0 : -1;
+
     for (; i < chunk.length; i++) {
-      // if we aren't currently parsing an object, skip until we find the next object start
-      while (
-        openBracesCount === 0 &&
-        chunk[i] !== OBJECT_OPEN_CHAR_CODE &&
-        i < chunk.length
-      ) {
-        i++;
+      const c = chunk[i];
+
+      if (inString) {
+        if (escaped) {
+          escaped = false;
+        } else if (c === BACKSLASH_CHAR_CODE) {
+          escaped = true;
+        } else if (c === QUOTE_CHAR_CODE) {
+          inString = false;
+        }
+        continue;
       }
 
-      // iterate through the chunk looking for the end of the current top level object
-      let j = i;
-      for (; j < chunk.length; j++) {
-        const c = chunk[j];
-        if (c === OBJECT_OPEN_CHAR_CODE) {
-          openBracesCount++;
-        } else if (c === OBJECT_CLOSE_CHAR_CODE) {
-          openBracesCount--;
+      if (c === QUOTE_CHAR_CODE) {
+        inString = true;
+      } else if (c === OBJECT_OPEN_CHAR_CODE) {
+        if (openBracesCount === 0) {
+          objectStart = i;
+        }
+        openBracesCount++;
+      } else if (c === OBJECT_CLOSE_CHAR_CODE && openBracesCount > 0) {
+        openBracesCount--;
 
-          // found a complete top level object, emit it
-          if (0 === openBracesCount) {
-            yield combineAndParse(
-              utf8decoder,
-              prevChunks,
-              chunk.subarray(i, j + 1),
-            );
+        // found a complete top level object, emit it
+        if (openBracesCount === 0) {
+          yield combineAndParse(
+            utf8decoder,
+            prevChunks,
+            chunk.subarray(objectStart, i + 1),
+          );
 
-            // if there was a prevChunk, we've consumed it now
-            prevChunks = [];
-
-            // advance the start index to the final '}' of the current object,
-            // which lets us start seeking the beginning of the next object
-            i = j;
-            break;
-          }
+          // if there was a prevChunk, we've consumed it now
+          prevChunks = [];
+          objectStart = -1;
         }
       }
+    }
 
-      // if we reached the end of our chunk before finding the end of the object
-      // store off the relevant remainder of our current chunk and go grab the next one
-      if (j === chunk.length) {
-        prevChunks.push(chunk.subarray(i));
-        break;
-      }
+    // if we reached the end of our chunk before finding the end of the object
+    // store off the relevant remainder of our current chunk and go grab the next one
+    if (openBracesCount > 0) {
+      prevChunks.push(chunk.subarray(objectStart));
     }
   }
 }
