@@ -16,13 +16,14 @@
 
 import { consola } from "../consola.js";
 import { italic } from "../highlight.js";
+import { isValidOsdkPackage } from "../validation.js";
 
 export async function promptOsdkPackage({
   osdkPackage,
 }: {
   osdkPackage?: string;
 }): Promise<string> {
-  while (osdkPackage == null || !/^@[a-z0-9-]+\/sdk$/u.test(osdkPackage)) {
+  while (osdkPackage == null || !isValidOsdkPackage(osdkPackage)) {
     if (osdkPackage != null) {
       consola.fail("Please enter a valid OSDK package name");
     }

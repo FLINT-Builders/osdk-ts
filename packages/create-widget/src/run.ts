@@ -24,6 +24,12 @@ import { generateFoundryConfigJson } from "./generate/generateFoundryConfigJson.
 import { generateNpmRc } from "./generate/generateNpmRc.js";
 import { green } from "./highlight.js";
 import type { SdkVersion, Template, TemplateContext } from "./templates.js";
+import {
+  isValidFoundryUrl,
+  isValidOsdkRegistryUrl,
+  isValidScopedPackageName,
+  isValidWidgetSetRid,
+} from "./validation.js";
 
 interface RunArgs {
   project: string;
@@ -52,6 +58,38 @@ export async function run({
   consola.start(
     `Creating project ${green(project)} using template ${green(template.id)}`,
   );
+
+  if (!isValidFoundryUrl(foundryUrl)) {
+    throw new Error(`Invalid Foundry URL: ${JSON.stringify(foundryUrl)}`);
+  }
+  if (!isValidWidgetSetRid(widgetSet)) {
+    throw new Error(`Invalid widget set RID: ${JSON.stringify(widgetSet)}`);
+  }
+  if (osdkPackage != null && !isValidScopedPackageName(osdkPackage)) {
+    throw new Error(`Invalid OSDK package: ${JSON.stringify(osdkPackage)}`);
+  }
+  if (osdkRegistryUrl != null && !isValidOsdkRegistryUrl(osdkRegistryUrl)) {
+    throw new Error(
+      `Invalid OSDK registry URL: ${JSON.stringify(osdkRegistryUrl)}`,
+    );
+  }
+
+  const useOsdk = osdkPackage != null || osdkRegistryUrl != null;
+  let npmRc: string | undefined;
+  if (useOsdk) {
+    if (osdkPackage == null || osdkRegistryUrl == null) {
+      throw new Error(
+        `Template ${template.id} requires OSDK package and registry URL`,
+      );
+    }
+    npmRc = generateNpmRc({ osdkPackage, osdkRegistryUrl, foundryUrl });
+  }
+  const foundryConfigJson = generateFoundryConfigJson({
+    foundryUrl,
+    widgetSet,
+    repository,
+    directory: template.buildDirectory,
+  });
 
   const cwd = process.cwd();
   const root = path.join(cwd, project);
@@ -149,23 +187,9 @@ export async function run({
   };
   processFiles(root);
 
-  const useOsdk = osdkPackage != null || osdkRegistryUrl != null;
-  if (useOsdk) {
-    if (osdkPackage == null || osdkRegistryUrl == null) {
-      throw new Error(
-        `Template ${template.id} requires OSDK package and registry URL`,
-      );
-    }
-    const npmRc = generateNpmRc({ osdkPackage, osdkRegistryUrl, foundryUrl });
+  if (npmRc != null) {
     fs.writeFileSync(path.join(root, ".npmrc"), npmRc);
   }
-
-  const foundryConfigJson = generateFoundryConfigJson({
-    foundryUrl,
-    widgetSet,
-    repository,
-    directory: template.buildDirectory,
-  });
   fs.writeFileSync(path.join(root, "foundry.config.json"), foundryConfigJson);
 
   consola.success("Success");

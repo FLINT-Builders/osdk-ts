@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import { assertSafeConfigValue } from "../validation.js";
+
 const LOCALHOST_URL = "http://localhost:8080";
 
 interface AuthDevelopmentArgs {
@@ -55,7 +57,7 @@ function ontologySection(
 # You can check the Ontology on the "Ontology SDK" tab of Developer Console.
 # It typically does not need to be changed.
 
-${envPrefix}FOUNDRY_ONTOLOGY_RID=${ontology}
+${envPrefix}FOUNDRY_ONTOLOGY_RID=${assertSafeConfigValue("Ontology RID", ontology)}
 `;
 }
 
@@ -66,6 +68,8 @@ export function generateEnvDevelopment({
   corsProxy,
   ontology,
 }: AuthDevelopmentArgs): string {
+  assertSafeConfigValue("Foundry URL", foundryUrl);
+  assertSafeConfigValue("client ID", clientId);
   const foundryApiUrl = corsProxy ? LOCALHOST_URL : foundryUrl;
   const applicationUrl = LOCALHOST_URL;
 
@@ -121,6 +125,11 @@ export function generateEnvProduction({
   clientId,
   ontology,
 }: AuthProductionArgs): string {
+  assertSafeConfigValue("Foundry URL", foundryUrl);
+  assertSafeConfigValue("client ID", clientId);
+  if (applicationUrl != null) {
+    assertSafeConfigValue("application URL", applicationUrl);
+  }
   const applicationUrlOrDefault =
     applicationUrl ??
     "<Fill in the domain at which you deploy your application>";
@@ -162,6 +171,9 @@ export function generateAuthlessEnvProduction({
   applicationUrl,
   ontology,
 }: AuthlessProductionArgs): string {
+  if (applicationUrl != null) {
+    assertSafeConfigValue("application URL", applicationUrl);
+  }
   const applicationUrlOrDefault =
     applicationUrl ?? "<Fill in your application's subdomain URL>";
 

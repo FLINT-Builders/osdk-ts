@@ -15,8 +15,7 @@
  */
 
 import { consola } from "../consola.js";
-
-const scopeNameRegex = /^[a-zA-Z-_:]+$/u;
+import { isValidScope } from "../validation.js";
 
 export async function promptScopes({
   scopes,
@@ -25,9 +24,7 @@ export async function promptScopes({
 }): Promise<string[] | undefined> {
   while (true) {
     if (scopes != null) {
-      const invalidScopes = scopes.filter(
-        (scope) => !scopeNameRegex.test(scope),
-      );
+      const invalidScopes = scopes.filter((scope) => !isValidScope(scope));
       const allValidScopes = invalidScopes.length === 0;
       if (allValidScopes) {
         break;

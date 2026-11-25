@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import { assertSafeConfigValue } from "../validation.js";
+
 export function generateNpmRc({
   foundryUrl,
   osdkPackage,
@@ -23,6 +25,13 @@ export function generateNpmRc({
   osdkPackage: string | undefined;
   osdkRegistryUrl: string | undefined;
 }): string {
+  assertSafeConfigValue("Foundry URL", foundryUrl);
+  if (osdkRegistryUrl != null) {
+    assertSafeConfigValue("OSDK registry URL", osdkRegistryUrl);
+  }
+  if (osdkPackage != null) {
+    assertSafeConfigValue("OSDK package", osdkPackage);
+  }
   // pnpm requires a trailing slash in .npmrc
   // https://github.com/pnpm/pnpm/issues/5941
   const osdkRegistryUrlWithTrailingSlash =

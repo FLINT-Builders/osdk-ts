@@ -33,6 +33,16 @@ import { generateFoundryConfigJson } from "./generate/generateFoundryConfigJson.
 import { generateNpmRc } from "./generate/generateNpmRc.js";
 import { green } from "./highlight.js";
 import type { SdkVersion, Template, TemplateContext } from "./templates.js";
+import {
+  isValidApplicationRid,
+  isValidApplicationUrl,
+  isValidClientId,
+  isValidFoundryUrl,
+  isValidOntologyRid,
+  isValidOsdkRegistryUrl,
+  isValidScope,
+  isValidScopedPackageName,
+} from "./validation.js";
 
 interface RunArgs {
   project: string;
@@ -74,6 +84,49 @@ export async function run({
   );
 
   const isAuthless = template.authless ?? false;
+
+  validateRunArgs({
+    foundryUrl,
+    applicationUrl,
+    application,
+    ontology,
+    clientId,
+    osdkPackage,
+    osdkRegistryUrl,
+    scopes,
+  });
+
+  const npmRc = generateNpmRc({ osdkPackage, osdkRegistryUrl, foundryUrl });
+  const envDevelopment = isAuthless
+    ? generateAuthlessEnvDevelopment({
+        envPrefix: template.envPrefix,
+        ontology,
+      })
+    : generateEnvDevelopment({
+        envPrefix: template.envPrefix,
+        foundryUrl,
+        clientId: clientId ?? "",
+        corsProxy,
+        ontology,
+      });
+  const envProduction = isAuthless
+    ? generateAuthlessEnvProduction({
+        envPrefix: template.envPrefix,
+        applicationUrl,
+        ontology,
+      })
+    : generateEnvProduction({
+        envPrefix: template.envPrefix,
+        foundryUrl,
+        applicationUrl,
+        clientId: clientId ?? "",
+        ontology,
+      });
+  const foundryConfigJson = generateFoundryConfigJson({
+    foundryUrl,
+    application,
+    directory: template.buildDirectory,
+  });
 
   const cwd = process.cwd();
   const root = path.join(cwd, project);
@@ -210,41 +263,9 @@ export async function run({
     fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2));
   }
 
-  const npmRc = generateNpmRc({ osdkPackage, osdkRegistryUrl, foundryUrl });
   fs.writeFileSync(path.join(root, ".npmrc"), npmRc);
-
-  const envDevelopment = isAuthless
-    ? generateAuthlessEnvDevelopment({
-        envPrefix: template.envPrefix,
-        ontology,
-      })
-    : generateEnvDevelopment({
-        envPrefix: template.envPrefix,
-        foundryUrl,
-        clientId: clientId ?? "",
-        corsProxy,
-        ontology,
-      });
   fs.writeFileSync(path.join(root, ".env.development"), envDevelopment);
-  const envProduction = isAuthless
-    ? generateAuthlessEnvProduction({
-        envPrefix: template.envPrefix,
-        applicationUrl,
-        ontology,
-      })
-    : generateEnvProduction({
-        envPrefix: template.envPrefix,
-        foundryUrl,
-        applicationUrl,
-        clientId: clientId ?? "",
-        ontology,
-      });
   fs.writeFileSync(path.join(root, ".env.production"), envProduction);
-  const foundryConfigJson = generateFoundryConfigJson({
-    foundryUrl,
-    application,
-    directory: template.buildDirectory,
-  });
   fs.writeFileSync(path.join(root, "foundry.config.json"), foundryConfigJson);
 
   consola.success("Success");
@@ -264,4 +285,54 @@ export async function run({
       borderStyle: "rounded",
     },
   });
+}
+
+function validateRunArgs({
+  foundryUrl,
+  applicationUrl,
+  application,
+  ontology,
+  clientId,
+  osdkPackage,
+  osdkRegistryUrl,
+  scopes,
+}: Pick<
+  RunArgs,
+  | "foundryUrl"
+  | "applicationUrl"
+  | "application"
+  | "ontology"
+  | "clientId"
+  | "osdkPackage"
+  | "osdkRegistryUrl"
+  | "scopes"
+>): void {
+  const invalid = (name: string, value: string) =>
+    new Error(`Invalid ${name}: ${JSON.stringify(value)}`);
+  if (!isValidFoundryUrl(foundryUrl)) {
+    throw invalid("Foundry URL", foundryUrl);
+  }
+  if (applicationUrl != null && !isValidApplicationUrl(applicationUrl)) {
+    throw invalid("application URL", applicationUrl);
+  }
+  if (!isValidApplicationRid(application)) {
+    throw invalid("application RID", application);
+  }
+  if (ontology != null && !isValidOntologyRid(ontology)) {
+    throw invalid("Ontology RID", ontology);
+  }
+  if (clientId != null && !isValidClientId(clientId)) {
+    throw invalid("client ID", clientId);
+  }
+  if (osdkPackage != null && !isValidScopedPackageName(osdkPackage)) {
+    throw invalid("OSDK package", osdkPackage);
+  }
+  if (osdkRegistryUrl != null && !isValidOsdkRegistryUrl(osdkRegistryUrl)) {
+    throw invalid("OSDK registry URL", osdkRegistryUrl);
+  }
+  for (const scope of scopes ?? []) {
+    if (!isValidScope(scope)) {
+      throw invalid("scope", scope);
+    }
+  }
 }

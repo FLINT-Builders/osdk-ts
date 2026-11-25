@@ -16,16 +16,14 @@
 
 import { consola } from "../consola.js";
 import { italic } from "../highlight.js";
+import { isValidWidgetSetRid } from "../validation.js";
 
 export async function promptWidgetSetRid({
   widgetSet,
 }: {
   widgetSet?: string;
 }): Promise<string> {
-  while (
-    widgetSet == null ||
-    !/^ri\.widgetregistry\.\.widget-set\.[^.]+$/u.test(widgetSet)
-  ) {
+  while (widgetSet == null || !isValidWidgetSetRid(widgetSet)) {
     if (widgetSet != null) {
       consola.fail("Please enter a valid widget resource identifier (rid)");
     }
