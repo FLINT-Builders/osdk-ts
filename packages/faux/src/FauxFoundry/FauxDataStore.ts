@@ -855,8 +855,7 @@ export class FauxDataStore {
         .get(linkApiName);
 
       return Array.from(locators ?? []).map((a) => {
-        const [objectType, primaryKey] = a.split(":") ?? [];
-        invariant(objectType && primaryKey, "Invalid locator format");
+        const { objectType, primaryKey } = parseLocator(a);
         return this.getObjectOrThrow(objectType, primaryKey);
       });
     }

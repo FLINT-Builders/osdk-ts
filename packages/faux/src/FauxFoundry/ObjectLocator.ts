@@ -32,7 +32,14 @@ export function parseLocator(locator: ObjectLocator): {
   objectType: string;
   primaryKey: string;
 } {
-  const [objectType, primaryKey] = locator?.split(":") ?? [];
-  invariant(objectType && primaryKey, `Invalid locator format:  ${locator}`);
+  // Object type api names cannot contain ":" but primary keys can, so only the
+  // first ":" separates the two parts.
+  const separatorIndex = locator?.indexOf(":") ?? -1;
+  const objectType = locator?.slice(0, separatorIndex);
+  const primaryKey = locator?.slice(separatorIndex + 1);
+  invariant(
+    separatorIndex !== -1 && objectType && primaryKey,
+    `Invalid locator format:  ${locator}`,
+  );
   return { objectType, primaryKey };
 }
