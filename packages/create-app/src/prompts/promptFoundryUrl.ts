@@ -16,14 +16,16 @@
 
 import { consola } from "../consola.js";
 import { italic } from "../highlight.js";
+import { assertNoLineBreaks, FOUNDRY_URL_REGEX } from "../validation.js";
 
 export async function promptFoundryUrl({
   foundryUrl,
 }: {
   foundryUrl?: string;
 }): Promise<string> {
-  while (foundryUrl == null || !foundryUrl.startsWith("https://")) {
+  while (foundryUrl == null || !FOUNDRY_URL_REGEX.test(foundryUrl)) {
     if (foundryUrl != null) {
+      assertNoLineBreaks("Foundry URL", foundryUrl);
       consola.fail("Please enter a valid Foundry URL");
     }
     foundryUrl = await consola.prompt(

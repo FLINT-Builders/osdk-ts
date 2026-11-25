@@ -16,6 +16,7 @@
 
 import { consola } from "../consola.js";
 import { italic } from "../highlight.js";
+import { assertNoLineBreaks, OSDK_REGISTRY_URL_REGEX } from "../validation.js";
 
 export async function promptOsdkRegistryUrl({
   osdkRegistryUrl,
@@ -24,11 +25,10 @@ export async function promptOsdkRegistryUrl({
 }): Promise<string> {
   while (
     osdkRegistryUrl == null ||
-    !/^https:\/\/[^/]+\/artifacts\/api\/repositories\/ri\.[^/]+\/contents\/release\/npm\/?$/u.test(
-      osdkRegistryUrl,
-    )
+    !OSDK_REGISTRY_URL_REGEX.test(osdkRegistryUrl)
   ) {
     if (osdkRegistryUrl != null) {
+      assertNoLineBreaks("OSDK registry URL", osdkRegistryUrl);
       consola.fail(
         "Please enter a valid NPM registry URL to install your OSDK package",
       );
