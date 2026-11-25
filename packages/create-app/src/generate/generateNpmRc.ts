@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import { WHITESPACE_OR_CONTROL_REGEX } from "../validate.js";
+
 export function generateNpmRc({
   foundryUrl,
   osdkPackage,
@@ -23,6 +25,16 @@ export function generateNpmRc({
   osdkPackage: string | undefined;
   osdkRegistryUrl: string | undefined;
 }): string {
+  for (const [name, value] of [
+    ["Foundry URL", foundryUrl],
+    ["OSDK package", osdkPackage],
+    ["OSDK registry URL", osdkRegistryUrl],
+  ] as const) {
+    if (value != null && WHITESPACE_OR_CONTROL_REGEX.test(value)) {
+      throw new Error(`Invalid ${name} for .npmrc: ${JSON.stringify(value)}`);
+    }
+  }
+
   // pnpm requires a trailing slash in .npmrc
   // https://github.com/pnpm/pnpm/issues/5941
   const osdkRegistryUrlWithTrailingSlash =
