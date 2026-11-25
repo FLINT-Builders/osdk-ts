@@ -188,6 +188,7 @@ export async function cli(args: string[] = process.argv): Promise<void> {
     await promptOntologyAndOsdkPackageAndOsdkRegistryUrl({
       ...parsed,
       sdkVersion,
+      foundryUrl,
     });
   const corsProxy: boolean = isAuthless ? true : await promptCorsProxy(parsed);
   const scopes: string[] | undefined = isAuthless

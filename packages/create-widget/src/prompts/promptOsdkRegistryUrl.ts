@@ -16,21 +16,23 @@
 
 import { consola } from "../consola.js";
 import { italic } from "../highlight.js";
+import { parseOsdkRegistryUrl } from "../parseOsdkRegistryUrl.js";
 
 export async function promptOsdkRegistryUrl({
   osdkRegistryUrl,
+  foundryUrl,
 }: {
   osdkRegistryUrl?: string;
+  foundryUrl: string;
 }): Promise<string> {
-  while (
-    osdkRegistryUrl == null ||
-    !/^https:\/\/[^/]+\/artifacts\/api\/repositories\/ri\.[^/]+\/contents\/release\/npm\/?$/u.test(
-      osdkRegistryUrl,
-    )
-  ) {
+  let parsedOsdkRegistryUrl =
+    osdkRegistryUrl != null
+      ? parseOsdkRegistryUrl(osdkRegistryUrl, foundryUrl)
+      : undefined;
+  while (parsedOsdkRegistryUrl == null) {
     if (osdkRegistryUrl != null) {
       consola.fail(
-        "Please enter a valid NPM registry URL to install your OSDK package",
+        `Please enter a valid NPM registry URL to install your OSDK package. The registry must be hosted on your Foundry stack (${foundryUrl})`,
       );
     }
     osdkRegistryUrl = await consola.prompt(
@@ -39,6 +41,7 @@ export async function promptOsdkRegistryUrl({
       )}`,
       { type: "text" },
     );
+    parsedOsdkRegistryUrl = parseOsdkRegistryUrl(osdkRegistryUrl, foundryUrl);
   }
-  return osdkRegistryUrl.replace(/\/$/u, "");
+  return parsedOsdkRegistryUrl;
 }

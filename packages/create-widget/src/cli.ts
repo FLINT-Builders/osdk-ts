@@ -113,7 +113,7 @@ export async function cli(args: string[] = process.argv): Promise<void> {
     ? await promptOsdkPackage(parsed)
     : undefined;
   const osdkRegistryUrl: string | undefined = useOsdk
-    ? await promptOsdkRegistryUrl(parsed)
+    ? await promptOsdkRegistryUrl({ ...parsed, foundryUrl })
     : undefined;
   const widgetSet: string = await promptWidgetSetRid(parsed);
 

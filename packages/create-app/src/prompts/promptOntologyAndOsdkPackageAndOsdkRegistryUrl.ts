@@ -16,6 +16,7 @@
 
 import { consola } from "../consola.js";
 import { italic } from "../highlight.js";
+import { parseOsdkRegistryUrl } from "../parseOsdkRegistryUrl.js";
 import type { SdkVersion } from "../templates.js";
 
 export async function promptOntologyAndOsdkPackageAndOsdkRegistryUrl({
@@ -24,12 +25,14 @@ export async function promptOntologyAndOsdkPackageAndOsdkRegistryUrl({
   osdkRegistryUrl,
   skipOsdk,
   sdkVersion,
+  foundryUrl,
 }: {
   ontology?: string;
   osdkPackage?: string;
   osdkRegistryUrl?: string;
   skipOsdk?: boolean;
   sdkVersion: SdkVersion;
+  foundryUrl: string;
 }): Promise<{
   ontology?: string;
   osdkPackage?: string;
@@ -91,15 +94,14 @@ export async function promptOntologyAndOsdkPackageAndOsdkRegistryUrl({
     );
   }
 
-  while (
-    osdkRegistryUrl == null ||
-    !/^https:\/\/[^/]+\/artifacts\/api\/repositories\/ri\.artifacts\.[^/]+\/contents\/release\/npm\/?$/u.test(
-      osdkRegistryUrl,
-    )
-  ) {
+  let parsedOsdkRegistryUrl =
+    osdkRegistryUrl != null
+      ? parseOsdkRegistryUrl(osdkRegistryUrl, foundryUrl)
+      : undefined;
+  while (parsedOsdkRegistryUrl == null) {
     if (osdkRegistryUrl != null) {
       consola.fail(
-        "Please enter a valid NPM registry URL to install your OSDK package",
+        `Please enter a valid NPM registry URL to install your OSDK package. The registry must be hosted on your Foundry stack (${foundryUrl})`,
       );
     }
     osdkRegistryUrl = await consola.prompt(
@@ -108,11 +110,12 @@ export async function promptOntologyAndOsdkPackageAndOsdkRegistryUrl({
       )}`,
       { type: "text" },
     );
+    parsedOsdkRegistryUrl = parseOsdkRegistryUrl(osdkRegistryUrl, foundryUrl);
   }
 
   return {
     ontology,
     osdkPackage,
-    osdkRegistryUrl: osdkRegistryUrl.replace(/\/$/u, ""),
+    osdkRegistryUrl: parsedOsdkRegistryUrl,
   };
 }

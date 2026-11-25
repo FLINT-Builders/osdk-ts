@@ -25,12 +25,15 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
+const FOUNDRY_URL = "https://example.palantirfoundry.com";
 const valid =
   "https://example.palantirfoundry.com/artifacts/api/repositories/ri.artifacts.main.repository.fake/contents/release/npm";
 
 test("it accepts valid osdk registry url from prompt", async () => {
   vi.mocked(consola).prompt.mockResolvedValueOnce(valid);
-  expect(await promptOsdkRegistryUrl({})).toEqual(valid);
+  expect(await promptOsdkRegistryUrl({ foundryUrl: FOUNDRY_URL })).toEqual(
+    valid,
+  );
   expect(vi.mocked(consola).prompt).toHaveBeenCalledTimes(1);
 });
 
@@ -38,27 +41,51 @@ test("it prompts again if answered value is invalid", async () => {
   vi.mocked(consola).prompt.mockResolvedValueOnce("invalid");
   vi.mocked(consola).prompt.mockResolvedValueOnce("https://abc.com/something");
   vi.mocked(consola).prompt.mockResolvedValueOnce(valid);
-  expect(await promptOsdkRegistryUrl({})).toEqual(valid);
+  expect(await promptOsdkRegistryUrl({ foundryUrl: FOUNDRY_URL })).toEqual(
+    valid,
+  );
   expect(vi.mocked(consola).prompt).toHaveBeenCalledTimes(3);
 });
 
 test("it accepts valid initial value without prompt", async () => {
-  expect(await promptOsdkRegistryUrl({ osdkRegistryUrl: valid })).toEqual(
-    valid,
-  );
+  expect(
+    await promptOsdkRegistryUrl({
+      osdkRegistryUrl: valid,
+      foundryUrl: FOUNDRY_URL,
+    }),
+  ).toEqual(valid);
   expect(vi.mocked(consola).prompt).not.toHaveBeenCalled();
 });
 
 test("it prompts if initial value is invalid", async () => {
   vi.mocked(consola).prompt.mockResolvedValueOnce(valid);
-  expect(await promptOsdkRegistryUrl({ osdkRegistryUrl: "invalid" })).toEqual(
-    valid,
-  );
+  expect(
+    await promptOsdkRegistryUrl({
+      osdkRegistryUrl: "invalid",
+      foundryUrl: FOUNDRY_URL,
+    }),
+  ).toEqual(valid);
+  expect(vi.mocked(consola).prompt).toHaveBeenCalledTimes(1);
+});
+
+test("it prompts if initial value is not on the foundry host", async () => {
+  vi.mocked(consola).prompt.mockResolvedValueOnce(valid);
+  expect(
+    await promptOsdkRegistryUrl({
+      osdkRegistryUrl: valid.replace(
+        "example.palantirfoundry.com",
+        "example.palantirfoundry.com.other.example",
+      ),
+      foundryUrl: FOUNDRY_URL,
+    }),
+  ).toEqual(valid);
   expect(vi.mocked(consola).prompt).toHaveBeenCalledTimes(1);
 });
 
 test("it strips trailing slash from url", async () => {
   vi.mocked(consola).prompt.mockResolvedValueOnce(valid + "/");
-  expect(await promptOsdkRegistryUrl({})).toEqual(valid);
+  expect(await promptOsdkRegistryUrl({ foundryUrl: FOUNDRY_URL })).toEqual(
+    valid,
+  );
   expect(vi.mocked(consola).prompt).toHaveBeenCalledTimes(1);
 });
